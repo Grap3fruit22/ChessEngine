@@ -332,7 +332,7 @@ def SimulateMatch2(depth,iterW):
     board = chess.Board()
     while (not board.is_game_over(claim_draw=False)):
         if (board.turn):
-            board.push_uci(calcMinimaxMove(board,depth,board.turn,float(-inf),float(inf))[1].uci())
+            board.push_uci(calcMinimaxMove(board,depth,board.turn,float(-'inf'),float('inf'))[1].uci())
             #display(board)
         else:
             board.push_uci(ADAPTMCTS(board.fen(),iterW).uci())
