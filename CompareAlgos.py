@@ -161,6 +161,37 @@ def MiniMaxValFunc(board):
      val = (phase/68)*MIDGAMEFunc(board) + (68-phase)/68*ENDGAMEFunc(board)
      return [val]
 
+def ETPValFunc(board):
+    """ Takes a position and evaluates it using a custom Val Function."""
+    """Version 1 RAW Material:"""
+    turn = board.turn
+    
+    val = len(board.pieces(1,not(turn))) + 3*len(board.pieces(2,not(turn))) + 3*len(board.pieces(3,not(turn))) + 5*len(board.pieces(4,not(turn))) + 9*len(board.pieces(5,not(turn))) + 150*len(board.pieces(6,not(turn)))
+    val = val - len(board.pieces(1,turn)) - 3*len(board.pieces(2,turn)) - 3*len(board.pieces(3,turn)) - 5*len(board.pieces(4,turn)) - 9*len(board.pieces(5,turn)) - 150*len(board.pieces(6,turn))
+    
+    """ Bonus for Bishop Pair """
+    if (len(board.pieces(3,turn)) == 2):
+        val = val - 0.2
+    if (len(board.pieces(3,not(turn))) == 2):
+        val = val + 0.2
+    return val
+
+def NodeValFunc(node):
+    """ Takes a position and evaluates it using a custom Val Function."""
+    """Version 1 RAW Material:"""
+    board = node.board
+    turn = node.col
+    
+    val = len(board.pieces(1,not(turn))) + 3*len(board.pieces(2,not(turn))) + 3*len(board.pieces(3,not(turn))) + 5*len(board.pieces(4,not(turn))) + 9*len(board.pieces(5,not(turn))) + 150*len(board.pieces(6,not(turn)))
+    val = val - len(board.pieces(1,turn)) - 3*len(board.pieces(2,turn)) - 3*len(board.pieces(3,turn)) - 5*len(board.pieces(4,turn)) - 9*len(board.pieces(5,turn)) - 150*len(board.pieces(6,turn))
+    
+    """ Bonus for Bishop Pair """
+    if (len(board.pieces(3,turn)) == 2):
+        val = val - 0.2
+    if (len(board.pieces(3,not(turn))) == 2):
+        val = val + 0.2
+    return val
+
 """ Single Playout Function"""
 def playout(startboard):
     """ Takes a board as an inputs, and then plays a
@@ -183,21 +214,83 @@ def playout(startboard):
                 val = 0
     return val;
 
-def ValFunc2(node):
-    """ Takes a position and evaluates it using a custom Val Function."""
-    """Version 1 RAW Material:"""
-    board = node.board
-    turn = node.col
-    
-    val = len(board.pieces(1,not(turn))) + 3*len(board.pieces(2,not(turn))) + 3*len(board.pieces(3,not(turn))) + 5*len(board.pieces(4,not(turn))) + 9*len(board.pieces(5,not(turn))) + 150*len(board.pieces(6,not(turn)))
-    val = val - len(board.pieces(1,turn)) - 3*len(board.pieces(2,turn)) - 3*len(board.pieces(3,turn)) - 5*len(board.pieces(4,turn)) - 9*len(board.pieces(5,turn)) - 150*len(board.pieces(6,turn))
-    
-    """ Bonus for Bishop Pair """
-    if (len(board.pieces(3,turn)) == 2):
-        val = val - 0.25
-    if (len(board.pieces(3,not(turn))) == 2):
-        val = val + 0.25
+def EPTplayout(startboard,EarlyStop):
+    """ Takes a board as an inputs,and a number of moves after which will terminate the simulation and apply the Valuation Function.
+    and then plays a game from the board position by playing random moves until termination or game completion. """
+    results = []
+    board = chess.Board(startboard.fen())
+    #display(board) Now fixed and is taking correct Board reset.
+    MoveCount = 0
+    while (not board.is_game_over(claim_draw=False)):
         
+        rmove = random.choice([move for move in board.legal_moves])
+        board.push_uci(rmove.uci())
+        MoveCount+=1
+        if MoveCount>EarlyStop:
+            """Break out of Game"""
+            break
+        
+    if MoveCount>EarlyStop:
+        """Apply Val Func"""
+        if board.turn:
+            if ETPValFunc(board) > 0:
+                val = 1
+            else:
+                val = 0
+        else:
+            if ETPValFunc(board) < 0:
+                val = 1
+            else:
+                val = 0
+    else:    
+        results.append(board.result())
+    
+        if (board.result() == '1/2-1/2'):
+            val = 0.5
+        else:
+            if (board.result() =='1-0'):
+                val = 1
+            else:
+                """ !=draw & !=win => loss"""
+                val = 0
+    return val
+
+def ADEPTplayout(startboard,EarlyStop):
+    """ Takes a board as an inputs,and a number of moves after which will terminate the simulation and apply the Valuation Function.
+    and then plays a game from the board position by playing random moves until termination or game completion. """
+    board = chess.Board(startboard.fen())
+    currentVal = ETPValFunc(board)
+    #display(board) Now fixed and is taking correct Board reset.
+    MoveCount = 0
+    while (not board.is_game_over(claim_draw=False)):
+        
+        rmove = random.choice([move for move in board.legal_moves])
+        board.push_uci(rmove.uci())
+        MoveCount+=1
+        if MoveCount>EarlyStop:
+            """Break out of Game"""
+            break
+        
+    if MoveCount>EarlyStop:
+        """Apply Val Func"""
+        if board.turn:
+            if ETPValFunc(board) > currentVal:
+                val = 1
+            else:
+                val = 0
+        else:
+            if ETPValFunc(board) < currentVal:
+                val = 1
+            else:
+                val = 0
+    else:        
+        if (board.result() == '1/2-1/2'):
+            val = 0.5
+        elif (board.result() =='1-0'):
+            val = 1
+        else:
+            """ !=draw & !=win => loss"""
+            val = 0
     return val
     
 """ Building the node class """
@@ -224,12 +317,12 @@ class Node:
         """selectedMove = sorted(self.childNodes, key = ValuationFunc)[-1]"""
         
         epsilon = float(1e-6)
-        selectedMove = sorted(self.childNodes, key = lambda c: c.wins/(c.playouts + epsilon) + sqrt(2*log(self.playouts)/(c.playouts+epsilon)))[-1]
+        selectedMove = sorted(self.childNodes, key = lambda c: c.wins/(c.playouts + epsilon) + math.sqrt(2*math.log(self.playouts)/(c.playouts+epsilon)))[-1]
         
         return selectedMove
         
     def SelectChildValFunc(self):
-        selectedMove = sorted(self.childNodes, key = ValFunc2)[-1]
+        selectedMove = sorted(self.childNodes, key = NodeValFunc)[-1]
         
         return selectedMove    
     def AddChild(self, m, board):
@@ -241,7 +334,7 @@ class Node:
         self.childNodes.append(newNode)
         return newNode
 
-def ADAPTMCTS(rootfen,itermax, verbose = False):
+def ADAPTMCTS(rootfen,itermax, MCTypeFlag,verbose = False):
     rootNode = Node(board = chess.Board(rootfen))
     
     for i in range(itermax):
@@ -260,7 +353,14 @@ def ADAPTMCTS(rootfen,itermax, verbose = False):
             node = node.AddChild(m,chess.Board(board.fen()))
             
         """ SIMULATION"""
-        result = playout(chess.Board(board.fen()))
+        if MCTypeFlag == 0:
+            result = playout(chess.Board(board.fen()))
+        elif MCTypeFlag == 1:
+            result = EPTplayout(chess.Board(board.fen()),5)
+        elif MCTypeFlag == 2:
+            result = ADEPTplayout(chess.Board(board.fen()),5)
+        else:
+            'ERROR'
         
         """BACKPROPOGATION"""
         while node != None:
@@ -324,20 +424,93 @@ def calcMinimaxMove(board,depth,isMaximizingPlayer,alpha,beta):
     
     return [bestmovevalue,bestmove]
 
-def SimulateMatch2(depth,iterW):
+def SimulateMatch2(AlgoA,AlgoB):
     """ Takes input arguments of the maximum num of iterations for White and Black"""
+    Algo1, p1 = AlgoA
+    Algo2, p2 = AlgoB
+    
     w = 0
     d = 0
     l = 0
     board = chess.Board()
-    while (not board.is_game_over(claim_draw=False)):
-        if (board.turn):
-            board.push_uci(calcMinimaxMove(board,depth,board.turn,float("-inf"),float("inf"))[1].uci())
-            #display(board)
-        else:
-            board.push_uci(ADAPTMCTS(board.fen(),iterW).uci())
-            #display(board)
     
+    if Algo1 == 'MM':
+        if Algo2 == 'MCTS':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(calcMinimaxMove(board,p1,board.turn,float("-inf"),float("inf"))[1].uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,0).uci())
+        elif Algo2 == 'EPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(calcMinimaxMove(board,p1,board.turn,float("-inf"),float("inf"))[1].uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,1).uci())
+        elif Algo2 == 'ADEPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(calcMinimaxMove(board,p1,board.turn,float("-inf"),float("inf"))[1].uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,2).uci())               
+    elif Algo1 == 'MCTS':
+        if Algo2 == 'MM':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,0).uci())
+                else:
+                    board.push_uci(calcMinimaxMove(board,p2,board.turn,float("-inf"),float("inf"))[1].uci())
+        elif Algo2 == 'EPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,0).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,1).uci())
+        elif Algo2 == 'ADEPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,0).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,2).uci())
+    elif Algo1 == 'EPT':
+        if Algo2 == 'MM':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,1).uci())
+                else:
+                    board.push_uci(calcMinimaxMove(board,p2,board.turn,float("-inf"),float("inf"))[1].uci())
+        elif Algo2 == 'MCTS':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,1).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,0).uci())
+        elif Algo2 == 'ADEPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,1).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,2).uci())
+    elif Algo1 == 'ADEPT':
+        if Algo2 == 'MM':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,2).uci())
+                else:
+                    board.push_uci(calcMinimaxMove(board,p2,board.turn,float("-inf"),float("inf"))[1].uci())
+        elif Algo2 == 'MCTS':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,2).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,0).uci())
+        elif Algo2 == 'EPT':
+            while (not board.is_game_over(claim_draw=False)):
+                if (board.turn):
+                    board.push_uci(ADAPTMCTS(board.fen(),p1,2).uci())
+                else:
+                    board.push_uci(ADAPTMCTS(board.fen(),p2,1).uci())
+           
     if (board.result() == '1/2-1/2'):
         d = 1
     elif(board.result() == '1-0'):
@@ -346,13 +519,19 @@ def SimulateMatch2(depth,iterW):
         l = 1
     return w,d,l
 
-def CompareAlgos(Q):
+def CompareAlgos(a1,p1,a2,p2,Q):
+    """Plays equal number of games as white and black with the two inputted algorithms, returns the results."""
     w=0
     d=0
     l=0
-    for i in range(Q):
-        print(i/Q)
-        nw, nd, nl = SimulateMatch2(3,50)
+    for i in range(math.ceil(Q/2)):
+        nw, nd, nl = SimulateMatch2((a1,p1),(a2,p2))
+        w +=nw 
+        d +=nd
+        l += nl
+    
+    for i in range(math.ceil(Q/2),Q):
+        nl, nd, nw = SimulateMatch2((a2,p2),(a1,p1))
         w +=nw 
         d +=nd
         l += nl
@@ -363,4 +542,4 @@ def CompareAlgos(Q):
     return 'Finished'
 
 
-CompareAlgos(1)
+#CompareAlgos('ADEPT',1,'EPT',1,100)
