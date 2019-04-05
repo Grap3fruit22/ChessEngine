@@ -4,7 +4,7 @@ Created on Wed Apr  3 17:12:14 2019
 
 @author: 44775
 """
-from math import *
+import math
 import random
 import chess 
 
