@@ -519,7 +519,7 @@ def SimulateMatch2(AlgoA,AlgoB):
         l = 1
     return w,d,l
 
-def CompareAlgos(a1,p1,a2,p2,Q):
+def testAlgorithms(a1,p1,a2,p2,Q):
     """Plays equal number of games as white and black with the two inputted algorithms, returns the results."""
     w=0
     d=0
@@ -542,4 +542,12 @@ def CompareAlgos(a1,p1,a2,p2,Q):
     return 'Finished'
 
 
-#CompareAlgos('ADEPT',1,'EPT',1,100)
+testAlgorithms('ADEPT',1,'EPT',1,100)
+print("------")
+testAlgorithms('ADEPT',5,'EPT',5,100)
+print("------")
+testAlgorithms('ADEPT',15,'EPT',15,10)
+      
+      
+      
+      
