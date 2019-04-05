@@ -540,13 +540,23 @@ def testAlgorithms(a1,p1,a2,p2,Q):
     print('Draw % '+ str(d/len(range(Q))))
     print('Loss % '+ str(l/len(range(Q))))
     return 'Finished'
-
-
-testAlgorithms('ADEPT',1,'EPT',1,100)
+  
+#testAlgorithms('ADEPT',1,'EPT',1,100)
+#print("------")
+#testAlgorithms('ADEPT',5,'EPT',5,100)
+#print("------")
+#testAlgorithms('ADEPT',10,'EPT',10,100)
+#print("------")
+testAlgorithms('ADEPT',15,'EPT',15,200)
 print("------")
-testAlgorithms('ADEPT',5,'EPT',5,100)
+testAlgorithms('ADEPT',30,'EPT',30,200)
 print("------")
-testAlgorithms('ADEPT',15,'EPT',15,10)
+testAlgorithms('ADEPT',60,'EPT',60,200)
+#print("------")
+#testAlgorithms('ADEPT',90,'EPT',90,200)
+#print("------")
+#testAlgorithms('ADEPT',120,'EPT',120,100)
+
       
       
       
