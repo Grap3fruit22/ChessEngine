@@ -523,23 +523,9 @@ def AverageMoveSolver(Q):
     Out4 = sum(ListGMTimesDepth3)/Q
     
     return Out1, Out2, Out3, Out4  
-    
-t1,t2,t3,t4 = AverageMoveSolver(10)
-print(t1)
-print('---')
-print(t2)
-print('---')
-print(t3)
-print('---')
-print(t4)
 
-
-"""
-print('---')
-print("MCTS/EPT Timings")
-print('---')
-Arg1 = 102
-Arg2 = 51
+Arg1 = 200
+Arg2 = 300
 
 avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
 
@@ -549,16 +535,51 @@ print('---')
 print(Arg2)
 print(avgB)
 
-print('---')
-print("Minimax Timings")
-print('---')
+Arg1 = 200
+Arg2 = 300
 
-depthA = 3
-depthB = 2
-avgA, avgB = SimulateMatchMM(depthA,depthB)
+avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
 
-print("depth: = " + str(depthA))
+print(Arg1)
 print(avgA)
 print('---')
-print("depth: = " + str(depthB))
-print(avgB) """
+print(Arg2)
+print(avgB)
+#t1,t2,t3,t4 = AverageMoveSolver(10)
+#print(t1)
+#print('---')
+#print(t2)
+#print('---')
+#print(t3)
+#print('---')
+#print(t4)
+
+
+
+print('---')
+print("MCTS/EPT Timings")
+print('---')
+Arg1 = 450
+Arg2 = 250
+
+avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
+
+print(Arg1)
+print(avgA)
+print('---')
+print(Arg2)
+print(avgB)
+
+#print('---')
+#print("Minimax Timings")
+#print('---')
+
+#depthA = 3
+#depthB = 2
+#avgA, avgB = SimulateMatchMM(depthA,depthB)
+
+#print("depth: = " + str(depthA))
+#print(avgA)
+#print('---')
+#print("depth: = " + str(depthB))
+#print(avgB) """
