@@ -524,27 +524,7 @@ def AverageMoveSolver(Q):
     
     return Out1, Out2, Out3, Out4  
 
-Arg1 = 200
-Arg2 = 300
 
-avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
-
-print(Arg1)
-print(avgA)
-print('---')
-print(Arg2)
-print(avgB)
-
-Arg1 = 200
-Arg2 = 300
-
-avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
-
-print(Arg1)
-print(avgA)
-print('---')
-print(Arg2)
-print(avgB)
 #t1,t2,t3,t4 = AverageMoveSolver(10)
 #print(t1)
 #print('---')
@@ -554,13 +534,8 @@ print(avgB)
 #print('---')
 #print(t4)
 
-
-
-print('---')
-print("MCTS/EPT Timings")
-print('---')
-Arg1 = 450
-Arg2 = 250
+Arg1 = 1500
+Arg2 = 1400
 
 avgA, avgB = SimulateMatchMCT(Arg1,Arg2,6,6)
 
