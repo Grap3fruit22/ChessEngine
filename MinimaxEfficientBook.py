@@ -343,7 +343,6 @@ def WhiteBookSim(d1,d2):
                 bestChild = sorted(children, key = lambda c: c[1]/c[2])[indx]
                 Cnode = bestChild
                 board.push_uci(Cnode[0].uci())
-                print(Cnode[0])
             else:
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,d1,board.turn,alpha,beta)                
@@ -398,7 +397,6 @@ def BlackBookSim(d1,d2):
                 bestChild = sorted(children, key = lambda c: c[1]/c[2])[indx]
                 Cnode = bestChild
                 board.push_uci(Cnode[0].uci())
-                print(Cnode[0])
             else:
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,d2,board.turn,alpha,beta)                
@@ -443,4 +441,4 @@ OpeningBook = pickle.load(file_OB)
 
 #HumanMachineMatch(4)
 
-CompareBookVanilla(2,2,5)
+CompareBookVanilla(3,4,200)
