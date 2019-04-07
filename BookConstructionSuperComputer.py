@@ -437,7 +437,7 @@ if os.path.exists(filename):
     os.remove(filename)
     print('Old opening book has been deleted')
 
-file_OB = open(filename,'rb')
+file_OB = open(filename,'x')
 
 ConstructBook(filename,350,10)
 
