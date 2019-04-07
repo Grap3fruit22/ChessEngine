@@ -429,7 +429,7 @@ if os.path.exists(filename):
 
 file_OB = open(filename,'x')
 
-ConstructBook(filename,35000,10)
+ConstructBook(filename,100000,10)
 
 
 
