@@ -319,6 +319,9 @@ def HumanMachineMatch(depth):
 
 def WhiteBookSim(d1,d2):
     """Simulates a match between two alpha beta algos, but white has acess to an opening book."""
+    w = 0
+    l = 0
+    d = 0
     Cnode = OpeningBook
     alpha = float("-inf")
     beta = float("inf")
@@ -363,6 +366,9 @@ def WhiteBookSim(d1,d2):
 
 def BlackBookSim(d1,d2):
     """Simulates a match between two alpha beta algos, but white has acess to an opening book."""
+    w = 0
+    l = 0
+    d = 0
     Cnode = OpeningBook
     alpha = float("-inf")
     beta = float("inf")
