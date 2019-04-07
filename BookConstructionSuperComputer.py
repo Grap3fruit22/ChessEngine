@@ -362,7 +362,7 @@ def ConstructGameTree(MinElo,EloTol):
     return GameTree
     
 def ConstructBook(filename,itermax, DepthCutout,  verbose = False):
-    count = 0;
+    count = -5;
     rootfen = chess.Board().fen()
     
     """ Initializes the tree with human games, and propogates them up the tree."""
@@ -400,22 +400,12 @@ def ConstructBook(filename,itermax, DepthCutout,  verbose = False):
                 node.Update(1-result,1)
                 node = node.parentNode
                 
-        if ((i % (itermax/20)) == 0):
+        if (i % (itermax/20)) == 0:
             count +=5
             print(str(count) + ' % Complete.')
-        """Save the entire Tree to Memory using Pickle:"""
         
-        """ Automaticaly terminantes if memory usage is too high."""
-#        if (os.psutil.virtual_memory().percent>50):
-#            print('--------------')
-#            print('Memory usage critical.')
-#            print('--------------')
-#            print('Saving Opening Book.')
-#            print('--------------')
-#            print('Total Completion rate: = ' + str(i/itermax))
-#            break
     assert os.path.exists(filename), 'File does not exist.'
-    
+    """Save linked list to Memory using Pickle:"""
     file_OB1 = open(filename, 'wb')
     pickle.dump(NodeConverter(rootNode),file_OB1)
         
@@ -439,7 +429,7 @@ if os.path.exists(filename):
 
 file_OB = open(filename,'x')
 
-ConstructBook(filename,350,10)
+ConstructBook(filename,35000,10)
 
 
 
