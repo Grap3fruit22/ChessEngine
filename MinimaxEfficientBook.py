@@ -280,7 +280,7 @@ def HumanMachineMatch(depth):
     while (not board.is_game_over(claim_draw=False)):
         moveclock+=1
         if (board.turn):
-            if moveclock < 12 and Cnode[2] > criticalLvl:
+            if moveclock < 8 and Cnode[2] > criticalLvl:
                 """Look in the book"""
                 print('In Book')
                 if moveclock == 1:
@@ -302,7 +302,6 @@ def HumanMachineMatch(depth):
                 board.push_uci(Cnode[0].uci())
                 print(Cnode[0])
             else:
-                print("Out of book")
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,depth,board.turn,alpha,beta)                
                 board.push_uci(smove[1].uci())
@@ -311,12 +310,112 @@ def HumanMachineMatch(depth):
         else:
             movestr = input("Make your move in SAN.")
             board.push_san(movestr)
-#           display(board)
-            if moveclock < 12:
+#            display(board)
+            if moveclock < 8:
                 for node in Cnode[3]:
                     if (node[0] == board.peek()):
                         Cnode = node
                         break
+
+def WhiteBookSim(d1,d2):
+    """Simulates a match between two alpha beta algos, but white has acess to an opening book."""
+    Cnode = OpeningBook
+    alpha = float("-inf")
+    beta = float("inf")
+    board = chess.Board()
+    moveclock = 0
+    criticalLvl = 400
+    while (not board.is_game_over(claim_draw=False)):
+        moveclock+=1
+        if (board.turn):
+            if moveclock < 8 and Cnode[2] > criticalLvl:
+                """Look in the book"""
+                print('In Book')
+                if moveclock == 1:
+                    """Pick one of the top two moves"""
+                    indx = random.randrange(-2, 0)                        
+                else:
+                    """Larger range means more variability in play."""
+                    indx = random.randrange(-1, 0)
+                children = [x for x in Cnode[3]]
+                bestChild = sorted(children, key = lambda c: c[1]/c[2])[indx]
+                Cnode = bestChild
+                board.push_uci(Cnode[0].uci())
+                print(Cnode[0])
+            else:
+                """Run AB Minimax search as standard."""
+                smove = calcMinimaxMoveBook(board,d1,board.turn,alpha,beta)                
+                board.push_uci(smove[1].uci())
+        else:
+            smove = calcMinimaxMoveBook(board,d2,board.turn,alpha,beta)              
+            board.push_uci(smove[1].uci())
+            if moveclock < 8:
+                for node in Cnode[3]:
+                    if (node[0] == board.peek()):
+                        Cnode = node
+                        break
+
+def BlackBookSim(d1,d2):
+    """Simulates a match between two alpha beta algos, but white has acess to an opening book."""
+    Cnode = OpeningBook
+    alpha = float("-inf")
+    beta = float("inf")
+    board = chess.Board()
+    moveclock = 0
+    criticalLvl = 400
+    while (not board.is_game_over(claim_draw=False)):
+        moveclock+=1
+        if (board.turn):
+            smove = calcMinimaxMoveBook(board,d1,board.turn,alpha,beta)              
+            board.push_uci(smove[1].uci())
+            if moveclock < 8:
+                for node in Cnode[3]:
+                    if (node[0] == board.peek()):
+                        Cnode = node
+                        break
+        else:
+            if moveclock < 8 and Cnode[2] > criticalLvl:
+                """Look in the book"""
+                print('In Book')
+                if moveclock == 1:
+                    """Pick one of the top two moves"""
+                    indx = random.randrange(-2, 0)                        
+                else:
+                    """Larger range means more variability in play."""
+                    indx = random.randrange(-1, 0)
+                children = [x for x in Cnode[3]]
+                bestChild = sorted(children, key = lambda c: c[1]/c[2])[indx]
+                Cnode = bestChild
+                board.push_uci(Cnode[0].uci())
+                print(Cnode[0])
+            else:
+                """Run AB Minimax search as standard."""
+                smove = calcMinimaxMoveBook(board,d2,board.turn,alpha,beta)                
+                board.push_uci(smove[1].uci())
+                
+def CompareBookVanilla(d1,d2Q):
+    """Plays equal number of games as white and black with the Minimax algorithms, one has access to an opening book."""
+    w=0
+    d=0
+    l=0
+    for i in range(math.ceil(Q/2)):
+        nw, nd, nl = WhiteBookSim(d1,d2)
+        w +=nw 
+        d +=nd
+        l += nl
+    
+    for i in range(math.ceil(Q/2),Q):
+        nl, nd, nw = BlackBookSim(d2,d1)
+        w +=nw 
+        d +=nd
+        l += nl
+        
+    print('Win % ' + str(w/len(range(Q))))
+    print('Draw % '+ str(d/len(range(Q))))
+    print('Loss % '+ str(l/len(range(Q))))
+    return 'Finished'
+
+
 
 FileDir = os.path.dirname(os.path.abspath(__file__))
 filename = FileDir + "/LinkedBk1.txt"
@@ -324,22 +423,6 @@ filename = FileDir + "/LinkedBk1.txt"
 file_OB = open(filename,'rb')
 OpeningBook = pickle.load(file_OB)
 
-HumanMachineMatch(4)
+#HumanMachineMatch(4)
 
-""" Work in Progress
-def SimulateMatch2(DepthA,DepthB):
-    Takes input arguments of the maximum num of iterations for White and Black
-    alpha = float("-inf")
-    beta = float("inf")
-    
-    board = chess.Board()
-    while (not board.is_game_over(claim_draw=False)):
-        if (board.turn):
-            board.push_uci(calcMinimaxMove(board.fen(),depth,board.turn,alpha,beta).uci())
-            display(board)
-        else:
-            board.push_uci(calcMinimaxMoveBook(board.fen(),depth,board.turn,alpha,beta).uci())
-            display(board)
-"""
-
-
+CompareBookVanilla(2,2,1)
