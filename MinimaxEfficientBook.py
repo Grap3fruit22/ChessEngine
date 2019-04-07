@@ -330,7 +330,6 @@ def WhiteBookSim(d1,d2):
         if (board.turn):
             if moveclock < 8 and Cnode[2] > criticalLvl:
                 """Look in the book"""
-                print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
                     indx = random.randrange(-2, 0)                        
@@ -376,7 +375,6 @@ def BlackBookSim(d1,d2):
         else:
             if moveclock < 8 and Cnode[2] > criticalLvl:
                 """Look in the book"""
-                print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
                     indx = random.randrange(-2, 0)                        
@@ -425,4 +423,4 @@ OpeningBook = pickle.load(file_OB)
 
 #HumanMachineMatch(4)
 
-CompareBookVanilla(2,2,1)
+CompareBookVanilla(2,2,5)
