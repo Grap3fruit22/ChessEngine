@@ -353,6 +353,13 @@ def WhiteBookSim(d1,d2):
                     if (node[0] == board.peek()):
                         Cnode = node
                         break
+    if (board.result() == '1/2-1/2'):
+        d = 1
+    elif(board.result() == '1-0'):
+        w = 1
+    else:
+        l = 1
+    return w,d,l
 
 def BlackBookSim(d1,d2):
     """Simulates a match between two alpha beta algos, but white has acess to an opening book."""
@@ -390,7 +397,14 @@ def BlackBookSim(d1,d2):
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,d2,board.turn,alpha,beta)                
                 board.push_uci(smove[1].uci())
-                
+    if (board.result() == '1/2-1/2'):
+        d = 1
+    elif(board.result() == '1-0'):
+        w = 1
+    else:
+        l = 1
+    return w,d,l
+    
 def CompareBookVanilla(d1,d2,Q):
     """Plays equal number of games as white and black with the Minimax algorithms, one has access to an opening book."""
     w=0
@@ -412,7 +426,7 @@ def CompareBookVanilla(d1,d2,Q):
     print('Draw % '+ str(d/len(range(Q))))
     print('Loss % '+ str(l/len(range(Q))))
     return 'Finished'
-
+    
 
 
 FileDir = os.path.dirname(os.path.abspath(__file__))
