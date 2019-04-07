@@ -282,7 +282,7 @@ def HumanMachineMatch(depth):
         if (board.turn):
             if moveclock < 8 and Cnode[2] > criticalLvl:
                 """Look in the book"""
-                display('In Book')
+                print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
                     indx = random.randrange(-2, 0)                        
@@ -300,7 +300,7 @@ def HumanMachineMatch(depth):
                 bestChild = sorted(children, key = lambda c: c[1]/c[2])[indx]
                 Cnode = bestChild
                 board.push_uci(Cnode[0].uci())
-                display(board)
+                print(Cnode[0])
             else:
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,depth,board.turn,alpha,beta)                
