@@ -24,7 +24,7 @@ import pickle
 
 def NodeConverter(Node):
     """Converts a node into a linked list equivalent for saving and storage purposes."""  
-    return [Node.move,Node.wins,Node.playouts,[NodeConverter(cnode) for cnode in Node.children]]
+    return [Node.move,Node.wins,Node.playouts,[NodeConverter(cnode) for cnode in Node.childNodes]]
 
 def ReadData(filename):
     """Opens a PGN file containing Human games from Lichess and extracts the raw data. Clear everything 
