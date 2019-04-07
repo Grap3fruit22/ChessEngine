@@ -280,7 +280,7 @@ def HumanMachineMatch(depth):
     while (not board.is_game_over(claim_draw=False)):
         moveclock+=1
         if (board.turn):
-            if moveclock < 8 and Cnode[2] > criticalLvl:
+            if moveclock < 12 and Cnode[2] > criticalLvl:
                 """Look in the book"""
                 print('In Book')
                 if moveclock == 1:
@@ -302,6 +302,7 @@ def HumanMachineMatch(depth):
                 board.push_uci(Cnode[0].uci())
                 print(Cnode[0])
             else:
+                print("Out of book")
                 """Run AB Minimax search as standard."""
                 smove = calcMinimaxMoveBook(board,depth,board.turn,alpha,beta)                
                 board.push_uci(smove[1].uci())
@@ -310,11 +311,12 @@ def HumanMachineMatch(depth):
         else:
             movestr = input("Make your move in SAN.")
             board.push_san(movestr)
-#            display(board)
-            for node in Cnode[3]:
-                if (node[0] == board.peek()):
-                    Cnode = node
-                    break
+#           display(board)
+            if moveclock < 12:
+                for node in Cnode[3]:
+                    if (node[0] == board.peek()):
+                        Cnode = node
+                        break
 
 FileDir = os.path.dirname(os.path.abspath(__file__))
 filename = FileDir + "/LinkedBk1.txt"
