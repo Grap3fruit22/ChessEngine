@@ -349,7 +349,7 @@ def ConstructGameTree(MinElo,EloTol):
         #display(str(counter) + ' / 939')
         filename = "C:/Users/44775/Documents/lichess_Games_2017_01/" + os.fsdecode(file)
         #if filename.endswith(".???"):
-        display('Analysing games... ')
+        print('Analysing games... ')
         RawData = ReadData(filename)
         Data = CleanDataSet(RawData,MinElo,EloTol)
         totgames += len(Data)/5
@@ -358,7 +358,7 @@ def ConstructGameTree(MinElo,EloTol):
             result = ResultValue(Data[5*num])
             GameTree = UpdateGameTree(GameTree,Moves,result,(float(Data[5*num+1])+float(Data[5*num+2]))/2)
         counter += 1
-        display('Complete. Total games analyzed = ' + str(totgames))
+        print('Complete. Total games analyzed = ' + str(totgames))
     return GameTree
     
 def ConstructBook(filename,itermax, DepthCutout,  verbose = False):
@@ -402,7 +402,7 @@ def ConstructBook(filename,itermax, DepthCutout,  verbose = False):
                 
         if ((i % (itermax/20)) == 0):
             count +=5
-            display(str(count) + ' % Complete.')
+            print(str(count) + ' % Complete.')
         """Save the entire Tree to Memory using Pickle:"""
         
         """ Automaticaly terminantes if memory usage is too high."""
