@@ -393,7 +393,7 @@ def BlackBookSim(d1,d2):
                 smove = calcMinimaxMoveBook(board,d2,board.turn,alpha,beta)                
                 board.push_uci(smove[1].uci())
                 
-def CompareBookVanilla(d1,d2Q):
+def CompareBookVanilla(d1,d2,Q):
     """Plays equal number of games as white and black with the Minimax algorithms, one has access to an opening book."""
     w=0
     d=0
