@@ -34,12 +34,12 @@ PawnMoveTableW = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 PawnMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                  [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
-                  [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
-                  [0.5, 0.5, 0.0, 2.5, 2.5, 0.0, 0.5, 0.5],
+                  [-5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0],
+                  [-1.0, -1.0, -2.0, -3.0, -3.0, -2.0, -1.0, -1.0],
+                  [-0.5, -0.5, 0.0, -2.5, -2.5, 0.0, -0.5, -0.5],
                   [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
-                  [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
-                  [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
+                  [-0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.5, -0.5],
+                  [-0.5, -1.0, -1.0, 2.0, 2.0, -1.0, -1.0, -0.5],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 RookMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -172,10 +172,10 @@ def MIDGAMEFunc(board):
         """KING POSITIONAL BONUS"""
         """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
         kingposW = board.king(True)
-        value = value + 0.2*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
+        value = value + 0.1*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
         
         kingposB = board.king(False)
-        value = value + 0.2*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
+        value = value + 0.1*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
         
         """ Rook Positional Bonus"""
         rooksW = [square for square in board.pieces(4,True)]
@@ -200,6 +200,11 @@ def MIDGAMEFunc(board):
             value = value+0.25        
         if (len(board.pieces(3,False)) == 2):
             value = value-0.25
+        
+        if board.turn:
+            value += 0.1
+        else:
+            value += -0.1
             
     return value
 
@@ -273,10 +278,10 @@ def HumanMachineMatch(depth):
     beta = float("inf")
     depth = 3
     board = chess.Board()
-    moveclock = 8
+    moveclock = 0
     
     """ Keeps track of the node."""
-    criticalLvl = 400
+    criticalLvl = 1000
     while (not board.is_game_over(claim_draw=False)):
         moveclock+=1
         if (board.turn):
@@ -285,7 +290,7 @@ def HumanMachineMatch(depth):
                 print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
-                    indx = random.randrange(-2, 0)                        
+                    indx = random.randrange(-1, 0)                        
                 else:
                     """Larger range means more variability in play."""
                     indx = random.randrange(-1, 0)
@@ -439,6 +444,6 @@ filename = FileDir + "/LinkedBk1.txt"
 file_OB = open(filename,'rb')
 OpeningBook = pickle.load(file_OB)
 
-HumanMachineMatch(8)
+HumanMachineMatch(15)
 
 #CompareBookVanilla(3,4,200)
