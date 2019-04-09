@@ -290,7 +290,7 @@ def HumanMachineMatch(depth):
                 print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
-                    indx = random.randrange(-1, 0)                        
+                    indx = -3                       
                 else:
                     """Larger range means more variability in play."""
                     indx = random.randrange(-1, 0)
@@ -340,7 +340,7 @@ def WhiteBookSim(d1,d2):
                 """Look in the book"""
                 if moveclock == 1:
                     """Pick one of the top two moves"""
-                    indx = -3                        
+                    indx = -1                      
                 else:
                     """Larger range means more variability in play."""
                     indx = random.randrange(-1, 0)
