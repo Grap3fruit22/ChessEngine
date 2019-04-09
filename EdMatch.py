@@ -290,7 +290,7 @@ def HumanMachineMatch(depth):
                 print('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
-                    indx = -3                       
+                    indx = -7                    
                 else:
                     """Larger range means more variability in play."""
                     indx = random.randrange(-1, 0)
