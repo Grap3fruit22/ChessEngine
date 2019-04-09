@@ -273,7 +273,7 @@ def HumanMachineMatch(depth):
     beta = float("inf")
     depth = 3
     board = chess.Board()
-    moveclock = 0
+    moveclock = 8
     
     """ Keeps track of the node."""
     criticalLvl = 400
@@ -389,7 +389,7 @@ def BlackBookSim(d1,d2):
                 """Look in the book"""
                 if moveclock == 1:
                     """Pick one of the top two moves"""
-                    indx = random.randrange(-2, 0)                        
+                    indx = random.randrange(-1, 0)                        
                 else:
                     """Larger range means more variability in play."""
                     indx = random.randrange(-1, 0)
@@ -439,6 +439,6 @@ filename = FileDir + "/LinkedBk1.txt"
 file_OB = open(filename,'rb')
 OpeningBook = pickle.load(file_OB)
 
-HumanMachineMatch(6)
+HumanMachineMatch(8)
 
 #CompareBookVanilla(3,4,200)
