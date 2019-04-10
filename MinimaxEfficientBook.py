@@ -441,4 +441,4 @@ OpeningBook = pickle.load(file_OB)
 
 #HumanMachineMatch(4)
 
-CompareBookVanilla(3,4,200)
+CompareBookVanilla(3,3,200)
