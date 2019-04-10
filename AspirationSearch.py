@@ -92,14 +92,14 @@ while (not board.is_game_over(claim_draw=False)):
     if (board.turn):
         depth = 1
         """ Search depth 1 fully """
-        smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
+        smove = calcMinimaxMoveTT(board,depth,not(board.turn),alpha,beta)
         print(smove)
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
                 alpha = smove[0] + float("-inf")
                 beta = smove[0] - float("inf")
-                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
+                smove = calcMinimaxMoveTT(board,depth,not(board.turn),alpha,beta)
                 """ if (smove[0] < alpha and smove[0] > beta):
                     print("Additional search triggered.")
                     smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta = float("inf"))"""
