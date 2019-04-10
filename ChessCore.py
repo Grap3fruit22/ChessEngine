@@ -328,10 +328,10 @@ def MIDGAMEFunc(board):
         """KING POSITIONAL BONUS"""
         """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
         kingposW = board.king(True)
-        value = value + KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
+        value = value + 0.3*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
         
         kingposB = board.king(False)
-        value = value + KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
+        value = value + 0.3*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
         
         """ Rook Positional Bonus"""
         rooksW = [square for square in board.pieces(4,True)]
@@ -345,11 +345,11 @@ def MIDGAMEFunc(board):
         """ Pawn Positional Bonus"""
         pawnsW = [square for square in board.pieces(4,True)]
         for pawn in pawnsW:
-            value = value + 0.3*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
             
         pawnsB = [square for square in board.pieces(4,False)]
         for pawn in pawnsB:
-            value = value + 0.3*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
             
         """ Bishop Pair Bonus """
         if (len(board.pieces(3,True)) == 2):
