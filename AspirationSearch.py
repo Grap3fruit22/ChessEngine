@@ -15,7 +15,7 @@ import random
 
 from ChessCore import BoardEval
 
-def calcMinimaxMoveLMTT(board,depth,isMaximizingPlayer,alpha,beta):
+def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
     if (depth == 0) or board.is_game_over(claim_draw=False):
         val = BoardEval(board)
         return val    
@@ -42,14 +42,14 @@ def calcMinimaxMoveLMTT(board,depth,isMaximizingPlayer,alpha,beta):
             """ Make the move run function on child, update values, then undo the move."""
             newboard = board.copy()
             if (not(board.is_capture(validMoves[index])) and depth > 1):
-                LMvalid = True
+                LMvalid = False # Turning LMR off for testing.
             else:
                 LMvalid = False
                 
             newboard.push_uci(validMoves[index].uci())
             if (LMvalid and BoardEval(board)[0] < alpha):
                 """ Late move reduction by 1 less ply """
-                moveval = calcMinimaxMoveLMTT(newboard,depth-2,isMaximizingPlayer,alpha,beta)[0]
+                moveval = calcMinimaxMoveTT(newboard,depth-2,isMaximizingPlayer,alpha,beta)[0]
             else:    
                 moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
                 
