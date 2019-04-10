@@ -66,7 +66,7 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
 alpha = float("-inf")
 beta = float("inf")
 depth = 1
-depthmax = 5
+depthmax = 6
 """ 0.5 pawn wide Aspiration window. """
 """ Trade off, more researching of the tree v.s faster searches """
 Window = [1.5,5,float("inf")]
