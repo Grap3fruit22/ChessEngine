@@ -485,10 +485,15 @@ def ScaledBoardEval(board):
             
             """ Bishop Pair Bonus """
             if (len(board.pieces(3,True)) == 2):
-                val = val+1        
+                val += 4        
             if (len(board.pieces(3,False)) == 2):
-                val = val-1
+                val += -4
 
+            """ Bonus for having the right to move """
+            if board.turn
+                val += 2
+            else
+                val += -2
             """Store in Transposition Table"""
             TT[str(idx)] = val
             
