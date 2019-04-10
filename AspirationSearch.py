@@ -69,8 +69,8 @@ depth = 1
 depthmax = 5
 """ 0.5 pawn wide Aspiration window. """
 """ Trade off, more researching of the tree v.s faster searches """
-Window = 1.5
-
+Window = [1.5,5,float("inf")]
+windowCount = 0
 arr = [0] * 781
 TT = {}
 
@@ -85,16 +85,20 @@ while (not board.is_game_over(claim_draw=False)):
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
-                alpha = smove[0] - Window # float("-inf")
-                beta = smove[0] + Window # float("inf")
-                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
-                if smove[0] == []:
-                    print("***Additional search triggered.***")
-                    alpha = float("-inf")
-                    beta = float("inf")
-                    smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta)
+            windowCount = 0
+            alpha = smove[0] - Window[windowCount] # float("-inf")
+            beta = smove[0] + Window[windowCount] # float("inf")
+            smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
                 
-                depth += 1
+            """*** Exponential widening of the window. ***"""
+            while smove[1] == []:
+                windowCount +=1
+                print("***Additional search triggered.***")
+                alpha = alpha - Window[windowCount]
+                beta = beta + Window[windowCount]
+                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
+                
+            depth += 1
                 
         board.push_uci(smove[1].uci())
         print(smove[1])
