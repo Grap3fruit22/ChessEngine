@@ -492,7 +492,7 @@ def ScaledBoardEval(board):
             """ Bonus for having the right to move """
             if board.turn:
                 val += 2
-            else
+            else:
                 val += -2
             """Store in Transposition Table"""
             TT[str(idx)] = val
