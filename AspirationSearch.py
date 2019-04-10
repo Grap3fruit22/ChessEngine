@@ -97,8 +97,8 @@ while (not board.is_game_over(claim_draw=False)):
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
-                alpha = smove[0] + 8
-                beta = smove[0] - 8
+                alpha = smove[0] - 8
+                beta = smove[0] + 8
                 smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
                 """ if (smove[0] < alpha and smove[0] > beta):
                     print("Additional search triggered.")
