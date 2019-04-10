@@ -769,9 +769,9 @@ def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
     bestmove = []
     
     if (isMaximizingPlayer):
-        bestmovevalue = float("-inf")
+        bestmovevalue = alpha
     else:
-        bestmovevalue = float("inf")
+        bestmovevalue = beta
         
     validMoves = [move for move in board.legal_moves]
     """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
@@ -790,7 +790,6 @@ def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
             newboard = board.copy()
             newboard.push_uci(validMoves[index].uci())
             moveval = calcMinimaxMoveMTD(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
-            #display(moveval)
             
             if (isMaximizingPlayer):
                 """ Attempt to maximize the position """
