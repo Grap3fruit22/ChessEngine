@@ -41,17 +41,8 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
         for index in range(len(validMoves)):
             """ Make the move run function on child, update values, then undo the move."""
             newboard = board.copy()
-            if (not(board.is_capture(validMoves[index])) and depth > 1):
-                LMvalid = False # Turning LMR off for testing.
-            else:
-                LMvalid = False
-                
-            newboard.push_uci(validMoves[index].uci())
-            if (LMvalid and BoardEval(board)[0] < alpha):
-                """ Late move reduction by 1 less ply """
-                moveval = calcMinimaxMoveTT(newboard,depth-2,isMaximizingPlayer,alpha,beta)[0]
-            else:    
-                moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
+            newboard.push_uci(validMoves[index].uci()) 
+            moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
                 
             if (isMaximizingPlayer):
                 """ Attempt to maximize the position """
