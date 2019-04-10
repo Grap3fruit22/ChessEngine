@@ -60,9 +60,6 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
                     bestmovevalue = moveval
                 alpha = max(alpha,moveval)
                 
-                if (beta <= alpha):
-                    break
-                return [alpha,bestmove]
             else:
                 """ Attempt to minimize the position """
                 if (moveval < bestmovevalue):
@@ -70,9 +67,9 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
                     bestmovevalue = moveval
                 beta = min(beta,moveval)
                 
-                if (beta <= alpha):
-                    break
-                return [beta,bestmove]
+            if (beta <= alpha):
+                break
+
     return [bestmovevalue,bestmove]
 
 alpha = float("-inf")
@@ -92,19 +89,18 @@ while (not board.is_game_over(claim_draw=False)):
     if (board.turn):
         depth = 1
         """ Search depth 1 fully """
-        smove = calcMinimaxMoveTT(board,depth,not(board.turn),alpha,beta)
+        smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
         print(smove)
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
-                alpha = smove[0] + float("-inf")
-                beta = smove[0] - float("inf")
-                smove = calcMinimaxMoveTT(board,depth,not(board.turn),alpha,beta)
+                #alpha = smove[0] + float("-inf")
+                #beta = smove[0] - float("inf")
+                smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),float("inf"))
                 """ if (smove[0] < alpha and smove[0] > beta):
                     print("Additional search triggered.")
                     smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta = float("inf"))"""
                 
-                print(smove)
                 depth += 1
                 
         board.push_uci(smove[1].uci())
