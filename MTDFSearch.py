@@ -19,7 +19,7 @@ while (not board.is_game_over(claim_draw=False)):
         depth += 1
         """ Run MTD(f) Algorithm based on output of previous depth run"""
         while(depth<depthmax):
-            [bestmoveval, move]  = calcMTDFMove(board,depth,bestmoveval)
+            [bestmoveval, move]  = calcMTDFMove(board,depth,bestmoveval[0])
             print([move,bestmoveval])
             depth += 1
 
