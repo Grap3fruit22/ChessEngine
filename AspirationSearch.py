@@ -22,9 +22,9 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
     """ search for best possible move """
     bestmove = []
     if (isMaximizingPlayer):
-        bestmovevalue = float("-inf")
+        bestmovevalue = alpha # float("-inf")
     else:
-        bestmovevalue = float("inf")
+        bestmovevalue = beta # float("inf")
        
     validMoves = [move for move in board.legal_moves]
     """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
@@ -85,8 +85,8 @@ while (not board.is_game_over(claim_draw=False)):
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
-                alpha = smove[0] - 100 # float("-inf")
-                beta = smove[0] + 100 # float("inf")
+                alpha = smove[0] - 6 # float("-inf")
+                beta = smove[0] + 6 # float("inf")
                 smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
                 """ if (smove[0] < alpha and smove[0] > beta):
                     print("Additional search triggered.")
