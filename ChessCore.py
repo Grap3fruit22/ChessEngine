@@ -490,7 +490,7 @@ def ScaledBoardEval(board):
                 val += -4
 
             """ Bonus for having the right to move """
-            if board.turn
+            if board.turn:
                 val += 2
             else
                 val += -2
