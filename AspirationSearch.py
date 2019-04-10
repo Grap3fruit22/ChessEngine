@@ -93,7 +93,7 @@ while (not board.is_game_over(claim_draw=False)):
         depth = 1
         """ Search depth 1 fully """
         smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta)
-        display(smove)
+        print(smove)
         depth += 1
         """ Prune aggresively by using a narrow Aspiration window for deeper searches"""
         while(depth<depthmax):
@@ -104,12 +104,12 @@ while (not board.is_game_over(claim_draw=False)):
                     print("Additional search triggered.")
                     smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta = float("inf"))"""
                 
-                display(smove)
+                print(smove)
                 depth += 1
                 
         board.push_uci(smove[1].uci())
-        display(board)
+        print(board)
     else:
         movestr = input("Make your move in SAN.")
         board.push_san(movestr)
-        display(board)
+        print(board)
