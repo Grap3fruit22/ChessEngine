@@ -13,7 +13,67 @@ import chess.syzygy
 import chess.polyglot
 import random
 
-from ChessCore import calcMinimaxMoveTT
+from ChessCore import BoardEval
+
+def calcMinimaxMoveLMTT(board,depth,isMaximizingPlayer,alpha,beta):
+    if (depth == 0) or board.is_game_over(claim_draw=False):
+        val = BoardEval(board)
+        return val    
+    """ search for best possible move """
+    bestmove = []
+    if (isMaximizingPlayer):
+        bestmovevalue = float("-inf")
+    else:
+        bestmovevalue = float("inf")
+       
+    validMoves = [move for move in board.legal_moves]
+    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
+    random.shuffle(validMoves)
+    validMoves.sort(key=board.is_capture)
+    
+    " If only one possibility"""
+    if (len(validMoves) == 1):
+        newboard = board.copy()
+        newboard.push_uci(validMoves[0].uci())
+        bestmove = validMoves[0]
+        bestmovevalue = BoardEval(newboard)[0]
+    else:
+        for index in range(len(validMoves)):
+            """ Make the move run function on child, update values, then undo the move."""
+            newboard = board.copy()
+            if (not(board.is_capture(validMoves[index])) and depth > 1):
+                LMvalid = True
+            else:
+                LMvalid = False
+                
+            newboard.push_uci(validMoves[index].uci())
+            if (LMvalid and BoardEval(board)[0] < alpha):
+                """ Late move reduction by 1 less ply """
+                moveval = calcMinimaxMoveLMTT(newboard,depth-2,isMaximizingPlayer,alpha,beta)[0]
+            else:    
+                moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
+                
+            if (isMaximizingPlayer):
+                """ Attempt to maximize the position """
+                if (moveval > bestmovevalue): 
+                    bestmove = validMoves[index]
+                    bestmovevalue = moveval
+                alpha = max(alpha,moveval)
+                
+                if (beta <= alpha):
+                    break
+                return [alpha,bestmove]
+            else:
+                """ Attempt to minimize the position """
+                if (moveval < bestmovevalue):
+                    bestmove = validMoves[index]
+                    bestmovevalue = moveval
+                beta = min(beta,moveval)
+                
+                if (beta <= alpha):
+                    break
+                return [beta,bestmove]
+    return [bestmovevalue,bestmove]
 
 alpha = float("-inf")
 beta = float("inf")
