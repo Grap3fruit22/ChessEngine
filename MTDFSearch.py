@@ -24,9 +24,11 @@ while (not board.is_game_over(claim_draw=False)):
             depth += 1
 
         board.push_uci(move.uci())
-        display(board)
+        print('---')
+        print(move)
+        print('---')
     else:
         movestr = input("Make your move in SAN.")
         board.push_san(movestr)
-        display(board)
+        
         
