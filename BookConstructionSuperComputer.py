@@ -286,7 +286,7 @@ class Node:
         
     def SelectChildPureMC(self):
         """ Selects the move based on the UCT formula. """     
-        selectedMove = sorted(self.childNodes, key = lambda c: 1/c.playouts)[-1]
+        selectedMove = sorted(self.childNodes, key = lambda c: 1/c.playouts+)[-1]
         
         return selectedMove
     
@@ -429,7 +429,7 @@ if os.path.exists(filename):
 
 file_OB = open(filename,'x')
 
-ConstructBook(filename,100000,10)
+ConstructBook(filename,350000,8)
 
 
 
