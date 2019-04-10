@@ -92,7 +92,7 @@ while (not board.is_game_over(claim_draw=False)):
                     print("***Additional search triggered.***")
                     alpha = float("-inf")
                     beta = float("inf")
-                    smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta)"""
+                    smove = calcMinimaxMoveTT(board,depth,board.turn,float("-inf"),beta)
                 
                 depth += 1
                 
