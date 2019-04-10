@@ -276,7 +276,6 @@ def HumanMachineMatch(depth):
     Cnode = OpeningBook        
     alpha = float("-inf")
     beta = float("inf")
-    depth = 3
     board = chess.Board()
     moveclock = 0
     
@@ -444,6 +443,6 @@ filename = FileDir + "/LinkedBk1.txt"
 file_OB = open(filename,'rb')
 OpeningBook = pickle.load(file_OB)
 
-HumanMachineMatch(15)
+HumanMachineMatch(7)
 
 #CompareBookVanilla(3,4,200)
