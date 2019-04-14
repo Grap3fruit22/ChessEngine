@@ -18,7 +18,7 @@ arr = [0] * 781
     
 PawnMoveTableW = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                   [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
-                  [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
+                  [1.0, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 1.0],
                   [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
                   [0.5, 0.5, 0.0, 2.5, 2.5, 0.0, 0.5, 0.5],
                   [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
@@ -26,12 +26,12 @@ PawnMoveTableW = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 PawnMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                  [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
-                  [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
-                  [0.5, 0.5, 0.0, 2.5, 2.5, 0.0, 0.5, 0.5],
-                  [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
-                  [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
-                  [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
+                  [-5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0],
+                  [-1.0, -1.0, -2.0, -3.0, -3.0, -2.0, -1.0, -1.0],
+                  [-0.5, -0.5, 0.0, -2.5, -2.5, 0.0, -0.5, -0.5],
+                  [0.0, 0.0, 0.0, -2.0, -2.0, 0.0, 0.0, 0.0],
+                  [-1.0, 0.5, -1.0, 0.0, 0.0, -1.0, 0.5, -1.0],
+                  [0.5, -1.0, 1.0, 2.0, 2.0, -1.0, -1.0, 0.5],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 RookMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -127,34 +127,34 @@ def MIDGAMEFunc(board):
         """KING POSITIONAL BONUS"""
         """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
         kingposW = board.king(True)
-        value = value + KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
+        value = value + 0.3*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
         
         kingposB = board.king(False)
-        value = value + KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
+        value = value + 0.3*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
         
         """ Rook Positional Bonus"""
         rooksW = [square for square in board.pieces(4,True)]
         for rook in rooksW:
-            value = value + 0.5*RookMoveTableW[math.floor(rook/8)][rook % 8]
+            value = value + 0.3*RookMoveTableW[math.floor(rook/8)][rook % 8]
             
         rooksB = [square for square in board.pieces(4,False)]
         for rook in rooksB:
-            value = value + 0.5*RookMoveTableB[math.floor(rook/8)][rook % 8]
+            value = value + 0.3*RookMoveTableB[math.floor(rook/8)][rook % 8]
         
         """ Pawn Positional Bonus"""
         pawnsW = [square for square in board.pieces(4,True)]
         for pawn in pawnsW:
-            value = value + 0.3*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
             
         pawnsB = [square for square in board.pieces(4,False)]
         for pawn in pawnsB:
-            value = value + 0.3*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
             
         """ Bishop Pair Bonus """
         if (len(board.pieces(3,True)) == 2):
-            value = value+0.25        
+            value = value+0.3        
         if (len(board.pieces(3,False)) == 2):
-            value = value-0.25
+            value = value-0.3
         
         
         """ Add a small value for having tempo."""
@@ -442,7 +442,7 @@ def BoardEval(board):
         TT[str(idx)] = val
      return [val]
 
-def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta,priorityMove):
+def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta,priorityMoves):
     
     if (depth == 0) or board.is_game_over(claim_draw=False):
         val = BoardEval(board)
@@ -460,10 +460,11 @@ def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta,priorityMove):
     """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
     random.shuffle(validMoves)
     validMoves.sort(key=board.is_capture)
-    if priorityMove in validMoves:
-        """ Evaluate this move first. """
-        validMoves.remove(priorityMove)
-        validMoves.insert(0,priorityMove)
+    for move in priorityMoves:
+        if move in validMoves:
+            """ Evaluate this move first. """
+            validMoves.remove(move)
+            validMoves.insert(0,move)
     
     " If only one possibility"""
     if (len(validMoves) == 1):
@@ -516,15 +517,15 @@ def IDeepSim():
             if (board.turn):
                 depth = 1
                 """ Search depth 1 fully """
-                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[])
+                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[[]])
                 depth += 1
                 """ Run MTD(f) Algorithm based on output of previous depth run"""
                 while(depth<depthmax):
-                    smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,smove[1])
+                    smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[smove[1]])
                     depth += 1    
                 board.push_uci(smove[1].uci())
             else:
-                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,smove[1])
+                smove = calcMinimaxMoveTT(board,depth-1,board.turn,alpha,beta,[])
                 board.push_uci(smove[1].uci())
     
     if (board.result() == '1/2-1/2'):
@@ -541,7 +542,7 @@ def IDeepTimer():
     alpha = float("-inf")
     beta = float("inf")
     depth = 1
-    depthmax = 5
+    depthmax = 4
     board = chess.Board()
 
     while (not board.is_game_over(claim_draw=False)):
@@ -550,22 +551,20 @@ def IDeepTimer():
             depth = 1
             """ Search depth 1 fully """
             tA1 = time.time()
-            smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[])
+            smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[[]])
             depth += 1
-            """ Run MTD(f) Algorithm based on output of previous depth run"""
             while(depth<depthmax):
-                move = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,smove[1])[1]
+                move = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[smove[1]])[1]
                 depth += 1    
             tA2 = time.time()
             MoveATimes.append(tA2-tA1)
             board.push_uci(move.uci())
         else:
             tB1 = time.time()
-            move = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,smove[1])[1]
+            move = calcMinimaxMoveTT(board,depth-1,board.turn,alpha,beta,[[]])[1]
             tB2 = time.time()
             MoveBTimes.append(tB2-tB1)
             board.push_uci(move.uci())
-                
     AvgBtime = sum(MoveBTimes)/len(MoveBTimes)
     AvgAtime = sum(MoveATimes)/len(MoveATimes)
     return AvgAtime, AvgBtime
@@ -573,6 +572,7 @@ def IDeepTimer():
 def IDeepAvgTimer(Q):
     ListGMTA = []
     ListGMTB = []
+    TT.clear
     for i in range(Q):
         avg1, avg2 = IDeepTimer()
         ListGMTA.append(avg1)
@@ -581,6 +581,10 @@ def IDeepAvgTimer(Q):
     Out2 = sum(ListGMTB)/Q
     return Out1, Out2
 
+
+IDeepTimer()
+
+"""
 print('Average Time for a move Move of Iterative Deepening PV')
 t1,t2 = IDeepAvgTimer(10)
 print(t1)
@@ -590,3 +594,4 @@ print('---')
 
 print(' Approx EPT playouts equivalent: ')
 print(t1/0.08*50)
+"""
