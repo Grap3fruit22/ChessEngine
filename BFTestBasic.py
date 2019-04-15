@@ -68,6 +68,6 @@ def CalcBranchFact(Quantity):
     return EpochBF, sum(EpochBF)/Quantity
 
 
-X, Y = CalcBranchFact(10)
+X, Y = CalcBranchFact(1)
 print(X)
 print(Y)

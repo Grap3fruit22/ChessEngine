@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 15 11:04:56 2019
+Created on Sun Apr 14 10:21:05 2019
+
+@author: 44775
+"""# -*- coding: utf-8 -*-
+"""
+Created on Tue Feb 26 14:12:39 2019
 
 @author: 44775
 """
+"""Iterative deepening framework with a captures and PV heuristic."""
 
-import chess
+import time
 import math
+import chess
+import chess.syzygy
+import chess.polyglot
 import random
-import pickle
-#import pdb; pdb.set_trace()
-""" TT is the transposition table. """
+
 TT = {}
-
-""" Move tables list positional advantages for rooks, pawns and Kings""",
-"""Endgame doesn't utilize king positional tables, as this shifts as material is removed from the board."""
-
-def NodeConverter(Node):
-    """Converts a node into a linked list equivalent for saving and storage purposes."""  
-    return [Node.move,Node.wins,Node.playouts,[NodeConverter(cnode) for cnode in Node.children]]
-
+arr = [0] * 781
+    
 PawnMoveTableW = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                   [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
-                  [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
+                  [1.0, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 1.0],
                   [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
                   [0.5, 0.5, 0.0, 2.5, 2.5, 0.0, 0.5, 0.5],
                   [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
@@ -30,12 +31,12 @@ PawnMoveTableW = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 PawnMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                  [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
-                  [1.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0],
-                  [0.5, 0.5, 0.0, 2.5, 2.5, 0.0, 0.5, 0.5],
-                  [0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0],
-                  [0.5, -0.5, -1.0, 0.0, 0.0, -1.0, -0.5, 0.5],
-                  [0.5, 1.0, 1.0, -2.0, -2.0, 1.0, 1.0, 0.5],
+                  [-5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0],
+                  [-1.0, -1.0, -2.0, -3.0, -3.0, -2.0, -1.0, -1.0],
+                  [-0.5, -0.5, 0.0, -2.5, -2.5, 0.0, -0.5, -0.5],
+                  [0.0, 0.0, 0.0, -2.0, -2.0, 0.0, 0.0, 0.0],
+                  [-1.0, 0.5, -1.0, 0.0, 0.0, -1.0, 0.5, -1.0],
+                  [0.5, -1.0, 1.0, 2.0, 2.0, -1.0, -1.0, 0.5],
                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
 RookMoveTableB = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -64,6 +65,110 @@ KingMoveTable = [[1.0, 1.75, 0.5, 0.0, 0.0, 0.5, 1.75, 2.0],
                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                  [0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0],
                  [-2.0, -2.5, -0.5, 0.0, 0.0, -0.5, -2.0, -1.5]]
+
+def MhattDist(a,b):
+    """ Returns the manhattan distance between two squares """
+    filedist = abs((a % 8)-(b % 8))
+    rankdist = abs(math.floor(a/8) - math.floor(b/8))
+
+    return rankdist + filedist
+
+def ENDGAMEFunc(board):
+    """ Evaluates strength of a position based on endgame specific metrics """
+    if board.is_checkmate():
+        if board.turn:
+            value = -2000
+        else:
+            value = 2000
+    else:
+        """ Evaluates a position based on Endgame parameters, pushed pawns and King activation """
+        value = len(board.pieces(1,True)) + 3*len(board.pieces(2,True)) + 3*len(board.pieces(3,True)) + 5*len(board.pieces(4,True)) + 9*len(board.pieces(5,True))
+        value = value - len(board.pieces(1,False)) - 3*len(board.pieces(2,False)) - 3*len(board.pieces(3,False)) - 5*len(board.pieces(4,False)) - 9*len(board.pieces(5,False))
+    
+        kingposW = board.king(True)
+        kingposB = board.king(False)
+        
+        """ ACTIVATE the KING and PUSH PAWNS"""
+        """ add value for past and connected past pawns, (and push em baby)"""
+        pawnsW = [square for square in board.pieces(1,True)]
+        pfilesW = set()
+        pfilesB = set() 
+        """ This is for adding past and connected pawn data."""
+        
+        for pawn in pawnsW:
+            """penalize manhattan dist from king"""
+            value = value - 0.15*MhattDist(pawn,kingposW)
+            pfilesW.add(pawn % 8)
+            
+            """Push em baby"""
+            value = value + 0.05*((pawn - (pawn % 8))/8)
+        
+        pawnsB = [square for square in board.pieces(1,False)]
+        for pawn in pawnsB:
+            """penalize manhattan dist from king"""
+            value = value + 0.15*MhattDist(pawn,kingposB)
+            pfilesB.add(pawn % 8)
+            
+            
+            """Push em baby"""
+            value = value - 0.05*(8 - (pawn - (pawn % 8))/8)
+            
+    return value
+
+def MIDGAMEFunc(board):
+    turn = board.turn
+    
+    if board.is_checkmate():
+        if turn:
+            value = -2000
+        else:
+            value = 2000
+
+    else:
+        """ Base Value Valuation """
+        value = len(board.pieces(1,True)) + 3.25*len(board.pieces(2,True)) + 3.25*len(board.pieces(3,True)) + 5*len(board.pieces(4,True)) + 9*len(board.pieces(5,True))
+        value = value - len(board.pieces(1,False)) - 3.25*len(board.pieces(2,False)) - 3.25*len(board.pieces(3,False)) - 5*len(board.pieces(4,False)) - 9*len(board.pieces(5,False))
+    
+        """KING POSITIONAL BONUS"""
+        """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
+        kingposW = board.king(True)
+        value = value + 0.3*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
+        
+        kingposB = board.king(False)
+        value = value + 0.3*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
+        
+        """ Rook Positional Bonus"""
+        rooksW = [square for square in board.pieces(4,True)]
+        for rook in rooksW:
+            value = value + 0.3*RookMoveTableW[math.floor(rook/8)][rook % 8]
+            
+        rooksB = [square for square in board.pieces(4,False)]
+        for rook in rooksB:
+            value = value + 0.3*RookMoveTableB[math.floor(rook/8)][rook % 8]
+        
+        """ Pawn Positional Bonus"""
+        pawnsW = [square for square in board.pieces(4,True)]
+        for pawn in pawnsW:
+            value = value + 0.2*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
+            
+        pawnsB = [square for square in board.pieces(4,False)]
+        for pawn in pawnsB:
+            value = value + 0.2*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
+            
+        """ Bishop Pair Bonus """
+        if (len(board.pieces(3,True)) == 2):
+            value = value+0.3        
+        if (len(board.pieces(3,False)) == 2):
+            value = value-0.3
+        
+        
+        """ Add a small value for having tempo."""
+        if board.turn:
+            value += 0.1
+        else:
+            value -= 0.1
+            
+    return value
 
 POLYGLOT_RANDOM_ARRAY = [
         0x9D39247E33776D41, 0x2AF7398005AAA5C7, 0x44DB015024623547, 0x9C15F73E62A76AE2,
@@ -262,111 +367,7 @@ POLYGLOT_RANDOM_ARRAY = [
         0x70CC73D90BC26E24, 0xE21A6B35DF0C3AD7, 0x003A93D8B2806962, 0x1C99DED33CB890A1,
         0xCF3145DE0ADD4289, 0xD0E4427A5514FB72, 0x77C621CC9FB3A483, 0x67A34DAC4356550B,
         0xF8D626AAAF278509]
-
-def MhattDist(a,b):
-    """ Returns the manhattan distance between two squares """
-    filedist = abs((a % 8)-(b % 8))
-    rankdist = abs(math.floor(a/8) - math.floor(b/8))
-
-    return rankdist + filedist
-
-def ENDGAMEFunc(board):
-    """ Evaluates strength of a position based on endgame specific metrics """
-    if board.is_checkmate():
-        if board.turn:
-            value = -2000
-        else:
-            value = 2000
-    else:
-        """ Evaluates a position based on Endgame parameters, pushed pawns and King activation """
-        value = len(board.pieces(1,True)) + 3*len(board.pieces(2,True)) + 3*len(board.pieces(3,True)) + 5*len(board.pieces(4,True)) + 9*len(board.pieces(5,True))
-        value = value - len(board.pieces(1,False)) - 3*len(board.pieces(2,False)) - 3*len(board.pieces(3,False)) - 5*len(board.pieces(4,False)) - 9*len(board.pieces(5,False))
     
-        kingposW = board.king(True)
-        kingposB = board.king(False)
-        
-        """ ACTIVATE the KING and PUSH PAWNS"""
-        """ add value for past and connected past pawns, (and push em baby)"""
-        pawnsW = [square for square in board.pieces(1,True)]
-        pfilesW = set()
-        pfilesB = set() 
-        """ This is for adding past and connected pawn data."""
-        
-        for pawn in pawnsW:
-            """penalize manhattan dist from king"""
-            value = value - 0.15*MhattDist(pawn,kingposW)
-            pfilesW.add(pawn % 8)
-            
-            """Push em baby"""
-            value = value + 0.05*((pawn - (pawn % 8))/8)
-        
-        pawnsB = [square for square in board.pieces(1,False)]
-        for pawn in pawnsB:
-            """penalize manhattan dist from king"""
-            value = value + 0.15*MhattDist(pawn,kingposB)
-            pfilesB.add(pawn % 8)
-            
-            
-            """Push em baby"""
-            value = value - 0.05*(8 - (pawn - (pawn % 8))/8)
-            
-    return value
-
-def MIDGAMEFunc(board):
-    turn = board.turn
-    
-    if board.is_checkmate():
-        if turn:
-            value = -2000
-        else:
-            value = 2000
-
-    else:
-        """ Base Value Valuation """
-        value = len(board.pieces(1,True)) + 3.25*len(board.pieces(2,True)) + 3.25*len(board.pieces(3,True)) + 5*len(board.pieces(4,True)) + 9*len(board.pieces(5,True))
-        value = value - len(board.pieces(1,False)) - 3.25*len(board.pieces(2,False)) - 3.25*len(board.pieces(3,False)) - 5*len(board.pieces(4,False)) - 9*len(board.pieces(5,False))
-    
-        """KING POSITIONAL BONUS"""
-        """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
-        kingposW = board.king(True)
-        value = value + KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
-        
-        kingposB = board.king(False)
-        value = value + KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
-        
-        """ Rook Positional Bonus"""
-        rooksW = [square for square in board.pieces(4,True)]
-        for rook in rooksW:
-            value = value + 0.5*RookMoveTableW[math.floor(rook/8)][rook % 8]
-            
-        rooksB = [square for square in board.pieces(4,False)]
-        for rook in rooksB:
-            value = value + 0.5*RookMoveTableB[math.floor(rook/8)][rook % 8]
-        
-        """ Pawn Positional Bonus"""
-        pawnsW = [square for square in board.pieces(4,True)]
-        for pawn in pawnsW:
-            value = value + 0.3*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
-            
-        pawnsB = [square for square in board.pieces(4,False)]
-        for pawn in pawnsB:
-            value = value + 0.3*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
-            
-        """ Bishop Pair Bonus """
-        if (len(board.pieces(3,True)) == 2):
-            value = value+0.25        
-        if (len(board.pieces(3,False)) == 2):
-            value = value-0.25
-        
-        
-        """ Add a small value for having tempo."""
-        if board.turn:
-            value += 0.1
-        else:
-            value -= 0.1
-            
-    return value
-
 class ZobristHasher:
     def __init__(self, array):
         assert len(array) >= 781
@@ -420,7 +421,7 @@ class ZobristHasher:
     def __call__(self, board):
         return (self.hash_board(board) ^ self.hash_castling(board) ^
                 self.hash_ep_square(board) ^ self.hash_turn(board))
-      
+
 def zobrist_hash(board, *, _hasher=ZobristHasher(POLYGLOT_RANDOM_ARRAY)):    
     """ Calculates the Polyglot Zobrist hash of the position.
     A Zobrist hash is an XOR of pseudo-random values picked from
@@ -430,6 +431,8 @@ def zobrist_hash(board, *, _hasher=ZobristHasher(POLYGLOT_RANDOM_ARRAY)):
     """
     return _hasher(board)
 
+"""Minimimax Model with Transposition Table """
+
 def BoardEval(board):
      """ Hash the board """
      idx = zobrist_hash(board)
@@ -438,122 +441,14 @@ def BoardEval(board):
          val = TT.get(str(idx),"none")
      else:
         """ Takes a blend of endgame and midgame evaluation funcs in attempt to prevent eval discontinuity."""
-        phase = (len(board.pieces(5,True))*8+len(board.pieces(5,False)))*8+(len(board.pieces(3,True))*3+len(board.pieces(3,False)))*3 + (len(board.pieces(2,True))*3+len(board.pieces(2,False)))*3+(len(board.pieces(4,True))*5+len(board.pieces(4,False)))*5 + (len(board.pieces(1,True))+len(board.pieces(1,False)))
+        phase = (len(board.pieces(5,True))+len(board.pieces(5,False)))*8+(len(board.pieces(3,True))+len(board.pieces(3,False)))*3 + (len(board.pieces(2,True))+len(board.pieces(2,False)))*3+(len(board.pieces(4,True))+len(board.pieces(4,False)))*5 + (len(board.pieces(1,True))+len(board.pieces(1,False)))
         val = (phase/68)*MIDGAMEFunc(board) + (68-phase)/68*ENDGAMEFunc(board)
         """Store in dictionary"""
         TT[str(idx)] = val
      return [val]
 
-def ScaledBoardEval(board):
-    """ A simplified evaluation function which calculates the value of a position,
-    but scales the valuation to be an integer, so null window searching can converge. """
-    
-    """ Hash the board """
-    #idx = zobrist_hash(board)
-    #""" Look in the Transposition table. If the box is empty calculate the value."""
-    #if (str(idx) in TT):
-    #     val = TT.get(str(idx),"none")
-    #else:
-    """Evaluate the position"""
-    if board.is_checkmate():
-        if board.turn:
-            val = -2000
-        else:
-            val = 2000
-    else:
-        """ Base Value Valuation """
-        val = 10*len(board.pieces(1,True)) + 30*len(board.pieces(2,True)) + 32*len(board.pieces(3,True)) + 50*len(board.pieces(4,True)) + 90*len(board.pieces(5,True))
-        val = val - 10*len(board.pieces(1,False)) - 30*len(board.pieces(2,False)) - 32*len(board.pieces(3,False)) - 50*len(board.pieces(4,False)) - 90*len(board.pieces(5,False))
-    
-    """KING POSITIONAL BONUS"""
-    """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
-    kingposW = board.king(True)
-    val = val + 2*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
-        
-    kingposB = board.king(False)
-    val = val + 2*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
-        
-    """ Rook Positional Bonus"""
-    rooksW = [square for square in board.pieces(4,True)]
-    for rook in rooksW:
-        val = val + 2*RookMoveTableW[math.floor(rook/8)][rook % 8]
-            
-    rooksB = [square for square in board.pieces(4,False)]
-    for rook in rooksB:
-        val = val + 2*RookMoveTableB[math.floor(rook/8)][rook % 8]
-        
-    """ Pawn Positional Bonus"""
-    pawnsW = [square for square in board.pieces(4,True)]
-    for pawn in pawnsW:
-        val = val + 2*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
-            
-    pawnsB = [square for square in board.pieces(4,False)]
-    for pawn in pawnsB:
-        val = val + 2*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
-            
-        """ Bishop Pair Bonus """
-    if (len(board.pieces(3,True)) == 2):
-        val = val+5     
-    if (len(board.pieces(3,False)) == 2):
-        val = val-5
-
-    #"""Store in Transposition Table"""
-    #TT[str(idx)] = val
-            
-    return [val]
- 
-def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta):
-    
-    if (depth == 0) or board.is_game_over(claim_draw=False):
-        return BoardEval(board)
-    
-    """ search for best possible move """
-    bestmove = []
-    
-    if (isMaximizingPlayer):
-        bestmovevalue = alpha
-    else:
-        bestmovevalue = beta
-        
-    validMoves = [move for move in board.legal_moves]
-    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
-    random.shuffle(validMoves)
-    validMoves.sort(key=board.is_capture)
-    
-    " If only one possibility"""
-    if (len(validMoves) == 1):
-        newboard = board.copy()
-        newboard.push_uci(validMoves[0].uci())
-        bestmove = validMoves[0]
-        bestmovevalue = BoardEval(newboard)[0]
-    else:
-        for index in range(len(validMoves)):
-            """ Make the move run function on child, update values, then undo the move."""
-            newboard = board.copy()
-            newboard.push_uci(validMoves[index].uci())
-            moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
-            #display(moveval)
-            
-            if (isMaximizingPlayer):
-                """ Attempt to maximize the position """
-                if (moveval > bestmovevalue): 
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                alpha = max(alpha,moveval)
-            else:
-                """ Attempt to minimize the position """
-                if (moveval < bestmovevalue):
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                beta = min(beta,moveval)
-                
-            """ Prune position """
-            if (beta <= alpha):
-                break
-    
-    return [bestmovevalue,bestmove]
-
-def calcMinimaxMoveLMTT(board,depth,isMaximizingPlayer,alpha,beta):
+def calcMinimaxMoveTT(board,depth,isMaximizingPlayer,alpha,beta,priorityMoves,calculationTime):
+    stime = time.time()
     if (depth == 0) or board.is_game_over(claim_draw=False):
         val = BoardEval(board)
         return val
@@ -570,221 +465,11 @@ def calcMinimaxMoveLMTT(board,depth,isMaximizingPlayer,alpha,beta):
     """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
     random.shuffle(validMoves)
     validMoves.sort(key=board.is_capture)
-    
-    " If only one possibility"""
-    if (len(validMoves) == 1):
-        newboard = board.copy()
-        newboard.push_uci(validMoves[0].uci())
-        bestmove = validMoves[0]
-        bestmovevalue = BoardEval(newboard)[0]
-    else:
-        for index in range(len(validMoves)):
-            """ Make the move run function on child, update values, then undo the move."""
-            
-            newboard = board.copy()
-            
-            if (not(board.is_capture(validMoves[index])) and depth > 1):
-                LMvalid = True
-            else:
-                LMvalid = False
-                
-            newboard.push_uci(validMoves[index].uci())
-            
-            if (LMvalid and BoardEval(board)[0] < alpha):
-                """ Late move reduction by 1 less ply """
-                moveval = calcMinimaxMoveLMTT(newboard,depth-2,isMaximizingPlayer,alpha,beta)[0]
-            
-            else:    
-                moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
-            
-            if (isMaximizingPlayer):
-                """ Attempt to maximize the position """
-                if (moveval > bestmovevalue): 
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                alpha = max(alpha,moveval)
-            else:
-                """ Attempt to minimize the position """
-                if (moveval < bestmovevalue):
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                beta = min(beta,moveval)
-                
-            """ Prune position """
-            if (beta <= alpha):
-                break
-    
-    return [bestmovevalue,bestmove]
-
-def calcMinimaxMoveBF(board,depth,isMaximizingPlayer,alpha,beta,totalNodes, BF):
-    totalNodes += 1
-    if (depth == 0) or board.is_game_over(claim_draw=False):
-        val = BoardEval(board)[0]
-        return val, 0, totalNodes, BF
-    """ search for best possible move """
-    bestmove = []
-    
-    if (isMaximizingPlayer):
-        bestmovevalue = alpha
-    else:
-        bestmovevalue = beta
-        
-    validMoves = [move for move in board.legal_moves]
-    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
-    random.shuffle(validMoves)
-    validMoves.sort(key=board.is_capture)
-    
-    " If only one possibility"""
-    if (len(validMoves) == 1):
-        """ only one child """
-        newboard = board.copy()
-        newboard.push_uci(validMoves[0].uci())
-        bestmove = validMoves[0]
-        bestmovevalue = BoardEval(newboard)[0]
-        BF.append(1)
-    else:
-        children = 0
-        for index in range(len(validMoves)):
-            
-            """ Make the move run function on child, update values, then undo the move."""
-            newboard = board.copy()
-            
-            if (not(board.is_capture(validMoves[index])) and depth > 1):
-                LMvalid = True
-            else:
-                LMvalid = False
-            
-            newboard.push_uci(validMoves[index].uci())
-            
-            if (LMvalid and BoardEval(board)[0] < alpha):
-                """ Late move reduction by 1 less ply """
-                moveval, nullMove, nodes, BF = calcMinimaxMoveBF(newboard,depth-2,isMaximizingPlayer,alpha,beta,0,BF)
-                totalNodes +=nodes
-            
-            else:
-                """ Work as normal """
-                moveval, nullMove, nodes, BF = calcMinimaxMoveBF(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,0,BF)
-                totalNodes +=nodes
-                
-            if (isMaximizingPlayer):
-                """ Attempt to maximize the position """
-                if (moveval > bestmovevalue): 
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                alpha = max(alpha,moveval)
-            else:
-                """ Attempt to minimize the position """
-                if (moveval < bestmovevalue):
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                beta = min(beta,moveval)
-                
-            """ Prune position """
-            if (beta <= alpha):
-                if not(board.is_capture(validMoves[index])):
-                    """ Increment History Buterfly boards """
-                    """ history[board.turn][move.from][move.to] += depth*depth """
-                break
-            children +=1
-        BF.append(children)
-
-    return bestmovevalue, bestmove, totalNodes, BF
-
-def calcMinimaxMoveBFADV(board,depth,isMaximizingPlayer,alpha,beta,totalNodes, BF):
-    """ Calculates more advanced metrics in an effort to understand a more 
-    complex relationship between branching factor and val func, time and
-    other possible regressors."""
-    
-    totalNodes += 1
-    if (depth == 0) or board.is_game_over(claim_draw=False):
-        val = BoardEval(board)[0]
-        return val, 0, totalNodes, BF
-    """ search for best possible move """
-    bestmove = []
-    
-    if (isMaximizingPlayer):
-        bestmovevalue = alpha
-    else:
-        bestmovevalue = beta
-        
-    validMoves = [move for move in board.legal_moves]
-    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
-    random.shuffle(validMoves)
-    validMoves.sort(key=board.is_capture)
-    
-    " If only one possibility"""
-    if (len(validMoves) == 1):
-        """ only one child """
-        newboard = board.copy()
-        newboard.push_uci(validMoves[0].uci())
-        bestmove = validMoves[0]
-        bestmovevalue = BoardEval(newboard)[0]
-        BF.append(1)
-    else:
-        children = 0
-        for index in range(len(validMoves)):
-            
-            """ Make the move run function on child, update values, then undo the move."""
-            newboard = board.copy()
-            
-            if (not(board.is_capture(validMoves[index])) and depth > 1):
-                LMvalid = True
-            else:
-                LMvalid = False
-            
-            newboard.push_uci(validMoves[index].uci())
-            
-            if (LMvalid and BoardEval(board)[0] < alpha):
-                """ Late move reduction by 1 less ply """
-                moveval, nullMove, nodes, BF = calcMinimaxMoveBF(newboard,depth-2,isMaximizingPlayer,alpha,beta,0,BF)
-                totalNodes +=nodes
-            
-            else:
-                """ Work as normal """
-                moveval, nullMove, nodes, BF = calcMinimaxMoveBF(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,0,BF)
-                totalNodes +=nodes
-                
-            if (isMaximizingPlayer):
-                """ Attempt to maximize the position """
-                if (moveval > bestmovevalue): 
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                alpha = max(alpha,moveval)
-            else:
-                """ Attempt to minimize the position """
-                if (moveval < bestmovevalue):
-                    bestmove = validMoves[index]
-                    bestmovevalue = moveval
-                beta = min(beta,moveval)
-                
-            """ Prune position """
-            if (beta <= alpha):
-                if not(board.is_capture(validMoves[index])):
-                    """ Increment History Buterfly boards """
-                    """ history[board.turn][move.from][move.to] += depth*depth """
-                break
-            children +=1
-        BF.append(children)
-
-    return bestmovevalue, bestmove, totalNodes, BF
-
-def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
-    
-    if (depth == 0) or board.is_game_over(claim_draw=False):
-        return ScaledBoardEval(board)
-    
-    """ search for best possible move """
-    bestmove = []
-    
-    if (isMaximizingPlayer):
-        bestmovevalue = alpha
-    else:
-        bestmovevalue = beta
-        
-    validMoves = [move for move in board.legal_moves]
-    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
-    random.shuffle(validMoves)
-    validMoves.sort(key=board.is_capture)
+    for move in priorityMoves:
+        if move in validMoves:
+            """ Evaluate this move first. """
+            validMoves.remove(move)
+            validMoves.insert(0,move)
     
     " If only one possibility"""
     if (len(validMoves) == 1):
@@ -797,7 +482,7 @@ def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
             """ Make the move run function on child, update values, then undo the move."""
             newboard = board.copy()
             newboard.push_uci(validMoves[index].uci())
-            moveval = calcMinimaxMoveMTD(newboard,depth-1,not(isMaximizingPlayer),alpha,beta)[0]
+            moveval = calcMinimaxMoveTT(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,[],calculationTime -(time.time()-stime))[0]
             #display(moveval)
             
             if (isMaximizingPlayer):
@@ -812,31 +497,123 @@ def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
                     bestmove = validMoves[index]
                     bestmovevalue = moveval
                 beta = min(beta,moveval)
+
+            if calculationTime-(time.time()-stime) < max((calculationTime/70),0.00001):
+                print(calculationTime-(time.time()-stime))
+                break
                 
-            """ Prune position """
             if (beta <= alpha):
                 break
-    
+            
     return [bestmovevalue,bestmove]
 
-def calcMTDFMove(board,depth,InitialGuess):
-    """ USes the MTDF algorithm to search the game tree for promising moves.
-    It converges to the correct value by calling an AB Minimax search to find
-    bounds of subtrees.(calcMinimaxMoveTT is this function)"""
-    bestmoveval = InitialGuess
-    upperBound = float("inf")
-    lowerBound = float("-inf")
+""" Iterative Deepening with transposition table gainst human player"""
+
+def IDeepSim():
+    w = 0
+    d = 0
+    l = 0
+    alpha = float("-inf")
+    beta = float("inf")
+    depth = 1
+    depthmax = 5
+
+    arr = [0] * 781
+    TT = {}
+    board = chess.Board()
+
+    while (not board.is_game_over(claim_draw=False)):
+            if (board.turn):
+                stime = time.time()
+                depth = 1
+                """ Search depth 1 fully """
+                smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[[]],MoveTime + time.time-stime)
+                depth += 1
+                """ Run MTD(f) Algorithm based on output of previous depth run"""
+                while(time.time()-stime < MoveTime):
+                    if time.time-stime < MoveTime/2:
+                        smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[smove[1]],MoveTime-(time.time()-stime))
+                        depth += 1
+                    else:
+                        """Preserve Time"""
+                        
+                board.push_uci(smove[1].uci())
+            else:
+                smove = calcMinimaxMoveTT(board,depth-1,board.turn,alpha,beta,[])
+                board.push_uci(smove[1].uci())
     
-    while (lowerBound < upperBound):
-        display(lowerBound)
-        beta = max(bestmoveval, lowerBound + 1)
-        bestmoveval, move = calcMinimaxMoveMTD(board, depth, board.turn, beta-1, beta)
-        print('---')
-        print(move)
-        print('---')
-        if bestmoveval < beta:
-            upperBound = bestmoveval
+    if (board.result() == '1/2-1/2'):
+        d = 1
+    elif(board.result() == '1-0'):
+        w = 1
+    else:
+        l = 1
+    return w,d,l
+
+def IDeepTimer():
+    MoveATimes = []
+    MoveBTimes = []
+    alpha = float("-inf")
+    beta = float("inf")
+    depth = 1
+    depthmax = 4
+    board = chess.Board()
+
+    while (not board.is_game_over(claim_draw=False)):
+        depth = depthmax
+        if (board.turn):
+            depth = 1
+            """ Search depth 1 fully """
+            tA1 = time.time()
+            smove = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[[]])
+            depth += 1
+            while(depth<depthmax):
+                move = calcMinimaxMoveTT(board,depth,board.turn,alpha,beta,[smove[1]])[1]
+                depth += 1    
+            tA2 = time.time()
+            MoveATimes.append(tA2-tA1)
+            board.push_uci(move.uci())
         else:
-            lowerBound = bestmoveval
-    
-    return [bestmoveval, move]
+            tB1 = time.time()
+            move = calcMinimaxMoveTT(board,depth-1,board.turn,alpha,beta,[[]])[1]
+            tB2 = time.time()
+            MoveBTimes.append(tB2-tB1)
+            board.push_uci(move.uci())
+    AvgBtime = sum(MoveBTimes)/len(MoveBTimes)
+    AvgAtime = sum(MoveATimes)/len(MoveATimes)
+    return AvgAtime, AvgBtime
+
+def IDeepAvgTimer(Q):
+    ListGMTA = []
+    ListGMTB = []
+    TT.clear
+    for i in range(Q):
+        avg1, avg2 = IDeepTimer()
+        ListGMTA.append(avg1)
+        ListGMTB.append(avg2)
+    Out1 = sum(ListGMTA)/Q
+    Out2 = sum(ListGMTB)/Q
+    return Out1, Out2
+
+
+#IDeepTimer()
+
+"""
+print('Average Time for a move Move of Iterative Deepening PV')
+t1,t2 = IDeepAvgTimer(10)
+print(t1)
+print('---')
+print(t2)
+print('---')
+
+print(' Approx EPT playouts equivalent: ')
+print(t1/0.08*50)
+"""
+board = chess.Board()
+alpha = float("-inf")
+beta = float("inf")
+tB1 = time.time()
+move = calcMinimaxMoveTT(board,4,board.turn,alpha,beta,[[]],8)[1]
+print(move)
+tB2 = time.time()
+print(tB2-tB1)

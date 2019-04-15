@@ -226,9 +226,9 @@ def calcMinimaxMoveBook(board,depth,isMaximizingPlayer,alpha,beta):
     bestmove = []
     
     if (isMaximizingPlayer):
-        bestmovevalue = float("-inf")
+        bestmovevalue = alpha
     else:
-        bestmovevalue = float("inf")
+        bestmovevalue = beta
         
     validMoves = [move for move in board.legal_moves]
     """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
@@ -276,6 +276,7 @@ def HumanMachineMatch(depth):
     Cnode = OpeningBook        
     alpha = float("-inf")
     beta = float("inf")
+    depth = 3
     board = chess.Board()
     moveclock = 0
     
@@ -443,6 +444,6 @@ filename = FileDir + "/LinkedBk1.txt"
 file_OB = open(filename,'rb')
 OpeningBook = pickle.load(file_OB)
 
-HumanMachineMatch(7)
+HumanMachineMatch(8)
 
 #CompareBookVanilla(3,4,200)
