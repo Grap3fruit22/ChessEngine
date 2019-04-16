@@ -569,14 +569,13 @@ def HumanMachineMatch(depth):
     board = chess.Board()
     moveclock = 0
     """ Keeps track of the node."""
-    #Cnode = OpeningBook
+    Cnode = OpeningBook
     criticalLvl = 250
     while (not board.is_game_over(claim_draw=False)):
         moveclock+=1
         if (board.turn):
             if moveclock < 8 and Cnode.playouts > criticalLvl:
                 """Look in the book"""
-                display('In Book')
                 if moveclock == 1:
                     """Pick one of the top two moves"""
                     indx = random.randrange(-2, 0)                        
@@ -590,17 +589,14 @@ def HumanMachineMatch(depth):
                     print('----')
                 Cnode = sorted(Cnode.childNodes, key = lambda c: c.wins/c.playouts)[indx]
                 board.push_uci(Cnode.move.uci())
-                display(board)
             else:
                 """Run AB Minimax search as standard."""
                 valuation, move, PV = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[])
                 print(PV)
                 board.push_uci(move.uci())
-                display(board)
         else:
             movestr = input("Make your move in SAN.")
             board.push_san(movestr)
-            display(board)
             if moveclock < 0:
                 for node in Cnode.childNodes:
                     if (node.move == board.peek()):
@@ -613,7 +609,7 @@ def HumanMachineMatch(depth):
 
 """ Iterative Deepening with transposition table gainst human player"""
 
-def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
+def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
     """Takes in an amount of time for player A and whether their time schedule is a dynamic or static policy.
     Rakes in an amount of time for player B and whether their time schedule is dynamic or static.
     Proceeds to play a game at these time controls between the two players"""
@@ -627,7 +623,8 @@ def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
     mCountA = 0
     mCountB = 0
     arr = [0] * 781
-    TT = {}
+    TTW = {}
+    TTB = {}
     board = chess.Board()
 
     while (not board.is_game_over(claim_draw=False)) and (computeTimeA < timeA) and (computeTimeB < timeB):
@@ -636,10 +633,12 @@ def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
             
             if (board.turn):
                 if mCountA < 41:
-                    MoveTime = (timeA*0.80)/40
+                    MoveTime = (timeA*0.80)/25
                 else:
-                    MoveTime = (timeA-computeTimeA)*0.1
-
+                    MoveTime = (timeA-computeTimeA)*0.06
+                if AdaptiveTimeScheduleA:
+                        MoveTime += BoardEval(board,True)*0.08*MoveTime
+                        
                 stime = time.time()
                 depth = 1
                 """ Search depth 1 fully """
@@ -657,14 +656,16 @@ def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
                 """Add on the move time to total computation time."""
                 computeTimeA += time.time() - stime
                 board.push_uci(smove[1].uci())
-                display(board)
                 mCountA += 1
             else:
-                if mCountB < 41:
-                    MoveTime = (timeB*0.80)/40
+                if mCountA < 41:
+                    MoveTime = (timeB*0.80)/25
                 else:
-                    MoveTime = (timeB-computeTimeB)*0.1
-                    
+                    MoveTime = (timeB-computeTimeB)*0.06
+                
+                if AdaptiveTimeScheduleA:
+                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.08*MoveTime
+                        
                 stime = time.time()
                 depth = 1
                 """ Search depth 1 fully """
@@ -682,7 +683,6 @@ def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
                 """Add on the move time to total computation time."""
                 computeTimeB += time.time() - stime
                 board.push_uci(smove[1].uci())
-                display(board)
                 mCountB += 1
                 
     if computeTimeA > timeA:
@@ -698,9 +698,30 @@ def TimeBasedMatch(timeA,scheduleTypeA,timeB,scheduleTypeB):
             w = 1
         else:
             l = 1
-    
     return w,d,l
 
+def CompareTimeSchedules(timeA,timeB,Q):
+    """Plays equal number of games as white and black with the Minimax time based algorithm, and tests if
+    the increased amount of time for high evaluation is significant or not."""
+    print("Testing Time schedule static v.s adaptive")
+    w=0
+    d=0
+    l=0
+    for i in range(math.ceil(Q/2)):
+        nw, nd, nl = TimeBasedMatch(timeA,True,timeB,False)
+        w +=nw 
+        d +=nd
+        l += nl
+    
+    for i in range(math.ceil(Q/2),Q):
+        nl, nd, nw = TimeBasedMatch(timeA,False,timeB,True)
+        w +=nw 
+        d +=nd
+        l += nl
+        
+    print('Win % ' + str(w/len(range(Q))))
+    print('Draw % '+ str(d/len(range(Q))))
+    print('Loss % '+ str(l/len(range(Q))))
+    return 'Finished'
 
-TimeBasedMatch(500,1,300,1)
-
+CompareTimeSchedules(180,180,50)
