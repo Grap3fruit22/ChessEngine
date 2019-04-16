@@ -650,7 +650,6 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                         """Only starts an additional depth search if there is a reasonable chunk of time remaining."""
                         smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],[smove[1]],MoveTime-(time.time()-stime),True)
                         depth += 1
-                        print(depth)
                     else:
                         """Preserve Time"""
                 """Add on the move time to total computation time."""
@@ -677,7 +676,6 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                         """Only starts an additional depth search if there is a reasonable chunk of time remaining."""
                         smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],[smove[1]],MoveTime-(time.time()-stime),False)
                         depth += 1
-                        print(depth)
                     else:
                         """Preserve Time"""
                 """Add on the move time to total computation time."""
@@ -712,13 +710,14 @@ def CompareTimeSchedules(timeA,timeB,Q):
         w +=nw 
         d +=nd
         l += nl
-    
+    print("Completed half of the games.")
     for i in range(math.ceil(Q/2),Q):
         nl, nd, nw = TimeBasedMatch(timeA,False,timeB,True)
         w +=nw 
         d +=nd
         l += nl
-        
+    print("Completed all games")
+    print("---")
     print('Win % ' + str(w/len(range(Q))))
     print('Draw % '+ str(d/len(range(Q))))
     print('Loss % '+ str(l/len(range(Q))))
