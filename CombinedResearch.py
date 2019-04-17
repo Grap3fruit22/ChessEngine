@@ -637,7 +637,7 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 else:
                     MoveTime = (timeA-computeTimeA)*0.06
                 if AdaptiveTimeScheduleA:
-                        MoveTime += BoardEval(board,True)*0.08*MoveTime
+                        MoveTime += BoardEval(board,True)*0.05*MoveTime
                         
                 stime = time.time()
                 depth = 1
@@ -657,13 +657,13 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 board.push_uci(smove[1].uci())
                 mCountA += 1
             else:
-                if mCountA < 41:
+                if mCountB < 41:
                     MoveTime = (timeB*0.80)/25
                 else:
                     MoveTime = (timeB-computeTimeB)*0.06
                 
-                if AdaptiveTimeScheduleA:
-                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.08*MoveTime
+                if AdaptiveTimeScheduleB:
+                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.05*MoveTime
                         
                 stime = time.time()
                 depth = 1
@@ -712,7 +712,7 @@ def CompareTimeSchedules(timeA,timeB,Q):
         l += nl
     print("Completed half of the games.")
     for i in range(math.ceil(Q/2),Q):
-        nl, nd, nw = TimeBasedMatch(timeA,False,timeB,True)
+        nl, nd, nw = TimeBasedMatch(timeB,False,timeA,True)
         w +=nw 
         d +=nd
         l += nl
@@ -723,4 +723,5 @@ def CompareTimeSchedules(timeA,timeB,Q):
     print('Loss % '+ str(l/len(range(Q))))
     return 'Finished'
 
-CompareTimeSchedules(180,180,50)
+CompareTimeSchedules(180,180,30)
+CompareTimeSchedules(360,360,30)
