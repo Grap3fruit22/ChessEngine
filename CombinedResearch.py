@@ -724,4 +724,3 @@ def CompareTimeSchedules(timeA,timeB,Q):
     return 'Finished'
 
 CompareTimeSchedules(180,180,30)
-CompareTimeSchedules(360,360,30)
