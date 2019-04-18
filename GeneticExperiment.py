@@ -160,7 +160,7 @@ def RunAdvancedGeneticExperiement(InitialWeight,Generations,Playouts):
 
 board = chess.Board()  
 
-RunAdvancedGeneticExperiement([1,1,1,1,8.5],15,10)  
+RunAdvancedGeneticExperiement([1,1,1,1.5,8.5],15,15)  
         
     
     
