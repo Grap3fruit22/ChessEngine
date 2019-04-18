@@ -108,19 +108,23 @@ def RunAdvancedGeneticExperiement(InitialWeight,Generations,Playouts):
     bestmaskval = 0
     counter = 0
     
-    MaskList = [[Ep,0,0,0,0],
-                [0,Ep,0,0,0],
+    MaskList = [[0,Ep,0,0,0],
                 [0,0,Ep,0,0],
                 [0,0,0,Ep,0],
-                [0,0,0,0,Ep],
-                [-Ep,0,0,0,0],
                 [0,-Ep,0,0,0],
                 [0,0,-Ep,0,0],
-                [0,0,0,-Ep,0],
-                [0,0,0,0,-Ep]]
+                [0,0,0,-Ep,0]]
     
     while counter<Generations:
-        """ Each generation dad and his 8 kids duke it out, keeps track of the strongest boi"""
+        
+        MaskList = [[0,Ep,0,0,0],
+                [0,0,Ep,0,0],
+                [0,0,0,Ep,0],
+                [0,-Ep,0,0,0],
+                [0,0,-Ep,0,0],
+                [0,0,0,-Ep,0]]
+        
+        """ Each generation dad and his kids duke it out, keeps track of the strongest boi"""
         innerCount = 0
         print("dueling ")
         for mask in MaskList:
@@ -155,13 +159,8 @@ def RunAdvancedGeneticExperiement(InitialWeight,Generations,Playouts):
     return WeightA
 
 board = chess.Board()  
-"""
-RunBasicGeneticExperiement(np.array([1,1,1,1,2]),5,3)
-"""
-RunAdvancedGeneticExperiement([1,1,1,1,1],15,5)
-        
-        
-        
+
+RunAdvancedGeneticExperiement([1,1,1,1,8.5],15,10)  
         
     
     
