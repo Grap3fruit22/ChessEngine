@@ -329,28 +329,28 @@ def MIDGAMEFunc(board):
         """KING POSITIONAL BONUS"""
         """ RANK = floor(kingpos/8), FILE = KingPos % 8"""
         kingposW = board.king(True)
-        value = value + KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
+        value = value + 0.1*KingMoveTable[math.floor(kingposW/8)][kingposW % 8]
         
         kingposB = board.king(False)
-        value = value + KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
+        value = value + 0.1*KingMoveTable[math.floor(kingposB/8)][kingposB % 8]
         
         """ Rook Positional Bonus"""
         rooksW = [square for square in board.pieces(4,True)]
         for rook in rooksW:
-            value = value + 0.5*RookMoveTableW[math.floor(rook/8)][rook % 8]
+            value = value + 0.3*RookMoveTableW[math.floor(rook/8)][rook % 8]
             
         rooksB = [square for square in board.pieces(4,False)]
         for rook in rooksB:
-            value = value + 0.5*RookMoveTableB[math.floor(rook/8)][rook % 8]
+            value = value + 0.3*RookMoveTableB[math.floor(rook/8)][rook % 8]
         
         """ Pawn Positional Bonus"""
         pawnsW = [square for square in board.pieces(4,True)]
         for pawn in pawnsW:
-            value = value + 0.3*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableW[math.floor(pawn/8)][pawn % 8]
             
         pawnsB = [square for square in board.pieces(4,False)]
         for pawn in pawnsB:
-            value = value + 0.3*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
+            value = value + 0.2*PawnMoveTableB[math.floor(pawn/8)][pawn % 8]
             
         """ Bishop Pair Bonus """
         if (len(board.pieces(3,True)) == 2):
@@ -819,24 +819,103 @@ def calcMinimaxMoveMTD(board,depth,isMaximizingPlayer,alpha,beta):
     
     return [bestmovevalue,bestmove]
 
-def calcMTDFMove(board,depth,InitialGuess):
-    """ USes the MTDF algorithm to search the game tree for promising moves.
-    It converges to the correct value by calling an AB Minimax search to find
-    bounds of subtrees.(calcMinimaxMoveTT is this function)"""
-    bestmoveval = InitialGuess
-    upperBound = float("inf")
-    lowerBound = float("-inf")
-    
-    while (lowerBound < upperBound):
-        display(lowerBound)
-        beta = max(bestmoveval, lowerBound + 1)
-        bestmoveval, move = calcMinimaxMoveMTD(board, depth, board.turn, beta-1, beta)
-        print('---')
-        print(move)
-        print('---')
-        if bestmoveval < beta:
-            upperBound = bestmoveval
+def BasicValFunc(board):
+    """very simplistic valuation function"""
+    if board.is_checkmate():
+        if board.turn:
+            val = -2000
         else:
-            lowerBound = bestmoveval
+            val = 2000
+    else:
+        """ Evaluates a position based on Endgame parameters, pushed pawns and King activation """
+        val = len(board.pieces(1,True)) + 3*len(board.pieces(2,True)) + 3*len(board.pieces(3,True)) + 5*len(board.pieces(4,True)) + 9*len(board.pieces(5,True))
+        val = val - len(board.pieces(1,False)) - 3*len(board.pieces(2,False)) - 3*len(board.pieces(3,False)) - 5*len(board.pieces(4,False)) - 9*len(board.pieces(5,False))
     
-    return [bestmoveval, move]
+    return val
+
+def calcMinimaxMovePVSort(board,depth,isMaximizingPlayer,alpha,beta,PV,PriorityMoves):
+    
+    if (depth == 0) or board.is_game_over(claim_draw=False):
+        return BoardEval(board)[0], [], PV
+    
+    """ search for best possible move """
+    bestmove = []
+    
+    if (isMaximizingPlayer):
+        bestmovevalue = alpha
+    else:
+        bestmovevalue = beta
+        
+    validMoves = [move for move in board.legal_moves]
+    """ Sorts moves to have Captures first to improve alphabeta pruning efficiency."""
+    random.shuffle(validMoves)
+    validMoves.sort(key=board.is_capture)
+    
+    if PriorityMoves != None:
+        for move in PriorityMoves:
+            if move in validMoves:
+                """ Evaluate this move first. """
+                validMoves.remove(move)
+                validMoves.insert(0,move)
+                del PriorityMoves
+            
+    validMoves.sort(key=board.is_capture)
+    " If only one possibility"""
+    if (len(validMoves) == 1):
+        newboard = board.copy()
+        newboard.push_uci(validMoves[0].uci())
+        bestmove = validMoves[0]
+        bestmovevalue = BoardEval(newboard)[0]
+        PV[:] = [bestmove]
+    else:
+        for index in range(len(validMoves)):
+            """ Make the move run function on child, update values, then undo the move."""
+            newboard = board.copy()
+            newboard.push_uci(validMoves[index].uci())
+            moveval, move, ChildPV = calcMinimaxMovePVSort(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,[],[[]])
+            
+            if (isMaximizingPlayer):
+                """ Attempt to maximize the position """
+                if (moveval > bestmovevalue): 
+                    bestmove = validMoves[index]
+                    bestmovevalue = moveval
+                    PV[:] = [bestmove] + ChildPV
+                alpha = max(alpha,moveval)
+                
+            else:
+                """ Attempt to minimize the position """
+                if (moveval < bestmovevalue):
+                    bestmove = validMoves[index]
+                    bestmovevalue = moveval
+                    PV[:] = [bestmove] + ChildPV
+                beta = min(beta,moveval)
+                
+            if (beta <= alpha):
+                break
+            """ Prune position """
+    return bestmovevalue, bestmove, PV
+
+def CalcMTDFmove(board,f,d,PriorityMoves):
+    latestMove = []
+    latestPV = []
+    g = f
+    upperbound = float("inf")
+    lowerbound = float("-inf")
+    while lowerbound < upperbound:
+        if g == lowerbound:
+            beta = g + 1
+        else:
+            beta = g
+            
+        [g,move,PV] = calcMinimaxMovePVSort(board, d,board.turn,beta-1,beta,[],PriorityMoves)
+        if move != []:
+            latestMove = move
+            latestPV = PV
+        
+        if g < beta:
+            upperbound = g
+        else:
+            lowerbound = g
+            
+    return [g,latestMove,latestPV]
+    

@@ -517,7 +517,6 @@ def calcMinimaxMovePVSort(board,depth,isMaximizingPlayer,alpha,beta,PV,PriorityM
                 """ Evaluate this move first. """
                 validMoves.remove(move)
                 validMoves.insert(0,move)
-                del PriorityMoves
                 
     validMoves.sort(key=board.is_capture)
     " If only one possibility"""
@@ -554,9 +553,10 @@ def calcMinimaxMovePVSort(board,depth,isMaximizingPlayer,alpha,beta,PV,PriorityM
             if (beta <= alpha):
                 break
             """ Prune position ~ AB Pruning"""
-            if calculationTime-(time.time()-stime) < max((calculationTime/70),0.00001):
-                break
-            """ Prune position ~ Out of time"""
+            if calculationTime != float("inf"):
+                if calculationTime-(time.time()-stime) < max((calculationTime/70),0.00001):
+                    break
+                    """ Prune position ~ Out of time"""
             
     return bestmovevalue, bestmove, PV
 
@@ -637,7 +637,7 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 else:
                     MoveTime = (timeA-computeTimeA)*0.06
                 if AdaptiveTimeScheduleA:
-                        MoveTime += BoardEval(board,True)*0.05*MoveTime
+                        MoveTime += BoardEval(board,True)*0.08*MoveTime
                         
                 stime = time.time()
                 depth = 1
@@ -663,24 +663,27 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                     MoveTime = (timeB-computeTimeB)*0.06
                 
                 if AdaptiveTimeScheduleB:
-                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.05*MoveTime
+                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.08*MoveTime
                         
                 stime = time.time()
                 depth = 1
                 """ Search depth 1 fully """
-                smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[[]],[],MoveTime + time.time()-stime,False)
+                mval, smove, PV = CalcMTDFmove(board,0.4,depth,[[]],False)
+                timeB = time.time()-stime
                 depth += 1
                 """ Run MTD(f) Algorithm based on output of previous depth run"""
-                while(time.time()-stime < MoveTime):
+                while(timeB < MoveTime):
                     if time.time()-stime < MoveTime/3:
                         """Only starts an additional depth search if there is a reasonable chunk of time remaining."""
-                        smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],[smove[1]],MoveTime-(time.time()-stime),False)
+                        mval, smove, PV = CalcMTDFmove(board,mval,depth,PV,False)
                         depth += 1
+                        timeB = time.time()-stime
                     else:
                         """Preserve Time"""
+                        timeB = MoveTime
                 """Add on the move time to total computation time."""
                 computeTimeB += time.time() - stime
-                board.push_uci(smove[1].uci())
+                board.push_uci(smove.uci())
                 mCountB += 1
                 
     if computeTimeA > timeA:
@@ -712,7 +715,7 @@ def CompareTimeSchedules(timeA,timeB,Q):
         l += nl
     print("Completed half of the games.")
     for i in range(math.ceil(Q/2),Q):
-        nl, nd, nw = TimeBasedMatch(timeB,False,timeA,True)
+        nl, nd, nw = TimeBasedMatch(timeA,False,timeB,True)
         w +=nw 
         d +=nd
         l += nl
@@ -723,4 +726,28 @@ def CompareTimeSchedules(timeA,timeB,Q):
     print('Loss % '+ str(l/len(range(Q))))
     return 'Finished'
 
-CompareTimeSchedules(180,180,30)
+def CalcMTDFmove(board,f,d,PriorityMoves,flag):
+    latestMove = []
+    latestPV = []
+    g = f
+    upperbound = float("inf")
+    lowerbound = float("-inf")
+    while lowerbound < upperbound:
+        if g == lowerbound:
+            beta = g + 1
+        else:
+            beta = g
+            
+        [g,move,PV] = calcMinimaxMovePVSort(board, d,board.turn,beta-1,beta,[],PriorityMoves,float("inf"),flag)
+        if move != []:
+            latestMove = move
+            latestPV = PV
+        
+        if g < beta:
+            upperbound = g
+        else:
+            lowerbound = g
+            
+    return [g,latestMove,latestPV]
+
+CompareTimeSchedules(300,300,20)
