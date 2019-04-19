@@ -587,7 +587,6 @@ def TimeBasedMatchW(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
     board = chess.Board()
 
     while (not board.is_game_over(claim_draw=False)) and (computeTimeA < timeA) and (computeTimeB < timeB):
-            display(board)
             alpha = float("-inf")
             beta = float("inf")
             ctime = 0
