@@ -847,4 +847,4 @@ def CalcMTDFmove(board,f,d,PriorityMoves,flag):
             
     return [g,latestMove,latestPV]
 
-CompareTimeSchedules(300,300,40)
+CompareTimeSchedules(360,360,20)
