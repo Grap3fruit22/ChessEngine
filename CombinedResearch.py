@@ -672,7 +672,7 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 timeB = time.time()-stime
                 depth += 1
                 """ Run MTD(f) Algorithm based on output of previous depth run"""
-                while(timeB < MoveTime):
+                while(time.time()-stime < MoveTime):
                     if time.time()-stime < MoveTime/3:
                         """Only starts an additional depth search if there is a reasonable chunk of time remaining."""
                         mval, smove, PV = CalcMTDFmove(board,mval,depth,PV,False)
@@ -688,10 +688,8 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 
     if computeTimeA > timeA:
         l = 1
-        print("White Lost on time.")
     elif computeTimeB > timeB:
         w = 1
-        print("Black Lost on time.")
     else:
         if (board.result() == '1/2-1/2'):
             d = 1
@@ -709,13 +707,13 @@ def CompareTimeSchedules(timeA,timeB,Q):
     d=0
     l=0
     for i in range(math.ceil(Q/2)):
-        nw, nd, nl = TimeBasedMatch(timeA,True,timeB,False)
+        nw, nd, nl = TimeBasedMatch(timeA,False,timeB,False)
         w +=nw 
         d +=nd
         l += nl
     print("Completed half of the games.")
     for i in range(math.ceil(Q/2),Q):
-        nl, nd, nw = TimeBasedMatch(timeA,False,timeB,True)
+        nl, nd, nw = TimeBasedMatch(timeA,False,timeB,False)
         w +=nw 
         d +=nd
         l += nl
@@ -724,6 +722,7 @@ def CompareTimeSchedules(timeA,timeB,Q):
     print('Win % ' + str(w/len(range(Q))))
     print('Draw % '+ str(d/len(range(Q))))
     print('Loss % '+ str(l/len(range(Q))))
+    print("MTD(f) versus Minimax.")
     return 'Finished'
 
 def CalcMTDFmove(board,f,d,PriorityMoves,flag):
@@ -750,4 +749,4 @@ def CalcMTDFmove(board,f,d,PriorityMoves,flag):
             
     return [g,latestMove,latestPV]
 
-CompareTimeSchedules(300,300,20)
+CompareTimeSchedules(360,360,20)
