@@ -612,17 +612,13 @@ def HumanMachineMatch(depth):
 
 def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
     """Takes in an amount of time for player A and whether their time schedule is a dynamic or static policy.
-    Rakes in an amount of time for player B and whether their time schedule is dynamic or static.
+    Takes in an amount of time for player B and whether their time schedule is dynamic or static.
     Proceeds to play a game at these time controls between the two players"""
     
-    w = 0
-    d = 0
-    l = 0
+    w , d , l  =  0 , 0 , 0
+    mCountA , mCountB = 0 , 0
+    computeTimeA, computeTimeB = 0 , 0
     depth = 1
-    computeTimeA = 0
-    computeTimeB = 0
-    mCountA = 0
-    mCountB = 0
     arr = [0] * 781
     TTW = {}
     TTB = {}
@@ -634,22 +630,24 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
             
             if (board.turn):
                 if mCountA < 41:
-                    MoveTime = (timeA*0.80)/25
+                    MoveTime = (timeA*0.80)/40
                 else:
                     MoveTime = (timeA-computeTimeA)*0.06
                 if AdaptiveTimeScheduleA:
-                        MoveTime += BoardEval(board,True)*0.08*MoveTime
+                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.08*MoveTime
                         
                 stime = time.time()
                 depth = 1
                 """ Search depth 1 fully """
-                smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],[[]],MoveTime + time.time()-stime,True)
+                smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],
+                                              [[]],MoveTime + time.time()-stime,True)
                 depth += 1
                 """ Run MTD(f) Algorithm based on output of previous depth run"""
                 while(time.time()-stime < MoveTime):
                     if time.time()-stime < MoveTime/3:
-                        """Only starts an additional depth search if there is a reasonable chunk of time remaining."""
-                        smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],[smove[1]],MoveTime-(time.time()-stime),True)
+                        """Only starts an additional depth search if reasonable chunk of time remaining."""
+                        smove = calcMinimaxMovePVSort(board,depth,board.turn,alpha,beta,[],
+                                                      [smove[1]],MoveTime-(time.time()-stime),True)
                         depth += 1
                     else:
                         """Preserve Time"""
@@ -659,12 +657,12 @@ def TimeBasedMatch(timeA,AdaptiveTimeScheduleA,timeB,AdaptiveTimeScheduleB):
                 mCountA += 1
             else:
                 if mCountB < 41:
-                    MoveTime = (timeB*0.80)/25
+                    MoveTime = (timeB*0.80)/40
                 else:
                     MoveTime = (timeB-computeTimeB)*0.06
                 
                 if AdaptiveTimeScheduleB:
-                        MoveTime += (abs(BoardEval(board,True))-0.2)*0.08*MoveTime
+                        MoveTime += (abs(BoardEval(board,False))-0.2)*0.08*MoveTime
                         
                 stime = time.time()
                 depth = 1
