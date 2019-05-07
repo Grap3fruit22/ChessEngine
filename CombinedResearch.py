@@ -532,7 +532,8 @@ def calcMinimaxMovePVSort(board,depth,isMaximizingPlayer,alpha,beta,PV,PriorityM
             """ Make the move run function on child, update values, then undo the move."""
             newboard = board.copy()
             newboard.push_uci(validMoves[index].uci())
-            moveval, move, ChildPV = calcMinimaxMovePVSort(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,[],None,calculationTime -(time.time()-stime),Flag)
+            moveval, move, ChildPV = calcMinimaxMovePVSort(newboard,depth-1,not(isMaximizingPlayer),alpha,beta,[],None,
+                                                           calculationTime -(time.time()-stime),Flag)
             
             if (isMaximizingPlayer):
                 """ Attempt to maximize the position """
